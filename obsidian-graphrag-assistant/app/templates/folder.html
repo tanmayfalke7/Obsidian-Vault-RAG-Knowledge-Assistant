@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ folder.name }} — KnowledgeBase AI{% endblock %}
+{% block page_title %}{{ folder.name }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/documents/upload" class="btn btn-primary btn-sm">Upload to folder</a>
+{% endblock %}
+
+{% block content %}
+{% set active_page = 'folders' %}
+
+<div class="breadcrumb">
+  <a href="/folders">Folders</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>{{ folder.name }}</span>
+</div>
+
+<!-- Folder actions -->
+<div class="flex gap-3 mb-6 items-center">
+  <div style="font-size:2rem">📁</div>
+  <div>
+    <h2>{{ folder.name }}</h2>
+    {% if folder.description %}<p>{{ folder.description }}</p>{% endif %}
+    <div class="text-sm text-dim">{{ documents|length }} document{{ 's' if documents|length != 1 else '' }}</div>
+  </div>
+  <div class="flex gap-2" style="margin-left:auto">
+    <form action="/folders/{{ folder.id }}/delete" method="post"
+          hx-post="/folders/{{ folder.id }}/delete"
+          hx-confirm="Delete folder '{{ folder.name }}'? Documents will be unlinked.">
+      <button type="submit" class="btn btn-danger btn-sm">Delete folder</button>
+    </form>
+  </div>
+</div>
+
+{% if documents %}
+<div class="doc-grid">
+  {% for doc in documents %}
+  <div class="doc-card" id="fdoc-{{ doc.id }}">
+    <div class="flex items-center gap-3">
+      <div class="doc-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div style="min-width:0">
+        <div class="doc-card-title">{{ doc.title }}</div>
+        <div class="doc-card-meta">{{ doc.size_display }}</div>
+      </div>
+    </div>
+    <div class="doc-card-footer">
+      <span class="text-xs text-dim">{{ doc.created_at.strftime('%b %d, %Y') }}</span>
+      <a href="/documents/{{ doc.id }}" class="btn btn-ghost btn-sm btn-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📁</div>
+  <div class="empty-title">This folder is empty</div>
+  <div class="empty-sub">Upload documents and assign them to this folder</div>
+  <a href="/documents/upload" class="btn btn-primary mt-4">Upload document</a>
+</div>
+{% endif %}
+{% endblock %}

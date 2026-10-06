@@ -1,0 +1,73 @@
+<!-- Chat answer partial — injected by HTMX into #answer-stream -->
+<!-- Question bubble -->
+<div class="msg msg-user">
+  <div class="msg-label">You</div>
+  <div class="msg-bubble">{{ question }}</div>
+</div>
+
+<!-- AI answer bubble -->
+<div class="msg msg-ai">
+  <div class="msg-label">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:4px">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+    </svg>
+    KnowledgeBase AI
+    <span style="font-weight:400;margin-left:.5rem">{{ chunks_used }} chunk{{ 's' if chunks_used != 1 else '' }} retrieved</span>
+  </div>
+  <div class="msg-bubble">
+    <div style="white-space:pre-wrap;line-height:1.7">{{ answer }}</div>
+
+    {% if sources %}
+    <div class="answer-section">
+      <div class="answer-section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Sources
+      </div>
+      <div class="source-list">
+        {% for src in sources %}
+        <span class="source-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+          </svg>
+          {{ src.get('title', src.get('filename', '?')) }}
+          {% if src.get('score') %}
+          <span style="opacity:.6;font-size:.7rem">({{ "%.2f"|format(src.score) }})</span>
+          {% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if relationships %}
+    <div class="answer-section">
+      <div class="answer-section-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        Knowledge Graph
+      </div>
+      {% for rel in relationships[:8] %}
+      <div class="graph-chain mb-2">
+        <span class="graph-node">{{ rel.source }}</span>
+        <span class="graph-arrow">→</span>
+        <span class="graph-rel">{{ rel.relationship }}</span>
+        <span class="graph-arrow">→</span>
+        <span class="graph-node">{{ rel.target }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Query counter update -->
+  <div style="font-size:.75rem;color:var(--c-text-dim);margin-top:.375rem">
+    {{ query_used }} / {{ query_limit }} queries used
+    {% if not can_query %}
+    · <a href="/access-request" style="color:var(--c-warning)">Request more</a>
+    {% endif %}
+  </div>
+</div>

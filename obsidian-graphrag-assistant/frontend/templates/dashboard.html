@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Vault GraphRAG{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Overview</p>
+    <h1>Knowledge dashboard</h1>
+  </div>
+  <div class="action-row">
+    <a class="button button-primary" href="/notes?new=1">+ New Note</a>
+    <a class="button button-yellow" href="/notes?upload=1">Upload Markdown</a>
+    <a class="button button-secondary" href="/rag">Run GraphRAG Query</a>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <article class="stat-card">
+    <span>Total Notes</span>
+    <strong>{{ note_count }}</strong>
+    <small>MySQL-owned markdown notes</small>
+  </article>
+  <article class="stat-card">
+    <span>Active Folders</span>
+    <strong>{{ folder_count }}</strong>
+    <small>Vault organization nodes</small>
+  </article>
+  <article class="stat-card">
+    <span>Entities</span>
+    <strong>{{ entity_count }}</strong>
+    <small>Extracted graph concepts</small>
+  </article>
+  <article class="stat-card">
+    <span>Triples</span>
+    <strong>{{ triple_count }}</strong>
+    <small>Known concept relationships</small>
+  </article>
+</section>
+
+<section class="dashboard-grid">
+  <article class="panel">
+    <header class="panel-header">
+      <h2>Recently Created Notes</h2>
+      <a href="/notes">View all</a>
+    </header>
+    <div class="compact-list">
+      {% for note in recent_created %}
+      <a href="/notes?note={{ note.id }}" class="compact-row">
+        <strong>{{ note.title }}</strong>
+        <span>{{ note.created_at.strftime('%Y-%m-%d %H:%M') if note.created_at else '' }}</span>
+      </a>
+      {% else %}
+      <p class="muted">Create your first note to begin.</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="panel">
+    <header class="panel-header">
+      <h2>Recently Updated Notes</h2>
+      <a href="/notes">Open editor</a>
+    </header>
+    <div class="compact-list">
+      {% for note in recent_updated %}
+      <a href="/notes?note={{ note.id }}" class="compact-row">
+        <strong>{{ note.title }}</strong>
+        <span>{{ note.updated_at.strftime('%Y-%m-%d %H:%M') if note.updated_at else '' }}</span>
+      </a>
+      {% else %}
+      <p class="muted">No updates yet.</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="panel search-panel">
+  <h2>Quick Search</h2>
+  <form action="/notes" method="get" class="inline-form">
+    <input class="input" name="q" placeholder="Search title, filename, or content">
+    <button class="button button-primary" type="submit">Search Notes</button>
+  </form>
+</section>
+{% endblock %}
+{% block aux %}
+<section class="aux-panel">
+  <h2>Vault Sync</h2>
+  <dl class="meta-list">
+    <div><dt>Last checked</dt><dd>{{ last_sync.strftime('%Y-%m-%d %H:%M UTC') }}</dd></div>
+    <div><dt>Frontend</dt><dd>FastAPI + Jinja + Vanilla JS</dd></div>
+    <div><dt>Auth</dt><dd>HTTP-only same-origin cookie</dd></div>
+  </dl>
+</section>
+{% endblock %}

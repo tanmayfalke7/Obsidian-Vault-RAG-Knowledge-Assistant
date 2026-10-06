@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  {% block styles %}{% endblock %}
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <script src="/static/js/app.js" defer></script>
+  <script src="/static/js/search.js" defer></script>
+  {% block head_scripts %}{% endblock %}
+</head>
+<body data-page="{{ active_page }}">
+{% block body %}
+<div class="shell">
+  <header class="app-header">
+    <a class="brand" href="/dashboard" aria-label="Dashboard">
+      <span class="brand-mark">VG</span>
+      <span>
+        <strong>Vault GraphRAG</strong>
+        <small>Knowledge Assistant</small>
+      </span>
+    </a>
+    <nav class="top-nav" aria-label="Primary">
+      <a class="{% if active_page == 'dashboard' %}active{% endif %}" href="/dashboard">Dashboard</a>
+      <a class="{% if active_page == 'notes' %}active{% endif %}" href="/notes">Notes</a>
+      <a class="{% if active_page == 'graph' %}active{% endif %}" href="/graph">Graph</a>
+      <a class="{% if active_page == 'rag' %}active{% endif %}" href="/rag">GraphRAG</a>
+      <a class="{% if active_page == 'settings' %}active{% endif %}" href="/settings">Settings</a>
+    </nav>
+    <div class="header-user">
+      {% if user %}
+        <span class="user-chip">{{ user.name }}</span>
+        <button class="icon-button" type="button" data-logout title="Logout" aria-label="Logout">
+          <span aria-hidden="true">↗</span>
+        </button>
+      {% endif %}
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    {% block sidebar %}
+    <div class="side-section">
+      <a class="button button-primary" href="/notes?new=1">+ New Note</a>
+      <label class="button button-yellow upload-inline">
+        Upload Markdown
+        <input hidden type="file" accept=".md,text/markdown" data-upload-input>
+      </label>
+      <button class="button button-secondary" type="button" data-create-folder>Create Folder</button>
+    </div>
+    <form class="side-search" action="/notes" method="get">
+      <input name="q" type="search" placeholder="Search vault">
+    </form>
+    <div class="side-section">
+      <h2>My Vault</h2>
+      <div id="global-folder-tree" class="folder-tree muted-tree" aria-live="polite">Loading folders...</div>
+    </div>
+    {% endblock %}
+  </aside>
+
+  <main class="app-main">
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <aside class="app-aux">
+    {% block aux %}
+    <section class="aux-panel">
+      <h2>Inspector</h2>
+      <p class="muted">Select a note, source, graph node, or citation to inspect details.</p>
+      <div id="global-inspector"></div>
+    </section>
+    {% endblock %}
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

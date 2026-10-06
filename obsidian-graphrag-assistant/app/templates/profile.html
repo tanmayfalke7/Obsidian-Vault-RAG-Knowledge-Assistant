@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Profile — KnowledgeBase AI{% endblock %}
+{% block page_title %}My Account{% endblock %}
+
+{% block content %}
+
+{% if success %}<div class="alert alert-success mb-4" data-auto-dismiss>{{ success }}</div>{% endif %}
+{% if error   %}<div class="alert alert-error  mb-4">{{ error }}</div>{% endif %}
+
+<div class="grid-2 gap-6" style="max-width:900px;align-items:start">
+
+  <!-- Profile form -->
+  <div class="card">
+    <div class="card-title mb-4">Personal information</div>
+    <form action="/profile" method="post">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" type="text" name="full_name" value="{{ user.full_name }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" value="{{ user.email }}" disabled>
+        <div class="form-hint">Email cannot be changed</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" type="text" value="{{ user.username }}" disabled>
+      </div>
+      <hr style="border-color:var(--c-border);margin:1.25rem 0">
+      <div class="form-group">
+        <label class="form-label">New password <span class="text-dim">(leave blank to keep current)</span></label>
+        <input class="form-input" type="password" name="new_password" placeholder="Min. 8 characters" minlength="8">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm new password</label>
+        <input class="form-input" type="password" name="confirm_password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </form>
+  </div>
+
+  <!-- Usage & limits -->
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    <div class="card">
+      <div class="card-title mb-4">Usage & limits</div>
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-sm">Documents</span>
+            <span class="text-sm font-bold">{{ user.documents|length }} / {{ user.max_documents }}</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-fill" style="width:{{ [((user.documents|length / user.max_documents)*100)|int,100]|min if user.max_documents>0 else 0 }}%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-sm">AI Queries used</span>
+            <span class="text-sm font-bold">{{ user.ai_queries_used }} / {{ user.max_ai_queries }}</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-fill {% if user.queries_remaining() == 0 %}full{% elif user.queries_remaining() <= 1 %}warn{% endif %}"
+                 style="width:{{ [((user.ai_queries_used / user.max_ai_queries)*100)|int,100]|min if user.max_ai_queries>0 else 0 }}%"></div>
+          </div>
+        </div>
+      </div>
+
+      {% if not user.can_query() %}
+      <div class="alert alert-warning mt-4" style="font-size:.875rem">
+        Query limit reached.
+        <a href="/access-request">Request additional access →</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-title mb-3">Account info</div>
+      <dl style="display:grid;gap:.625rem;font-size:.875rem">
+        <div class="flex justify-between">
+          <dt class="text-dim">Member since</dt>
+          <dd>{{ user.created_at.strftime('%B %Y') }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-dim">Role</dt>
+          <dd>{{ 'Administrator' if user.is_admin else 'Member' }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-dim">Status</dt>
+          <dd><span class="badge badge-success">Active</span></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="card">
+      <div class="card-title mb-2">Need more?</div>
+      <p class="text-sm mb-3">Request higher limits from your administrator.</p>
+      <a href="/access-request" class="btn btn-secondary btn-sm">Request access</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

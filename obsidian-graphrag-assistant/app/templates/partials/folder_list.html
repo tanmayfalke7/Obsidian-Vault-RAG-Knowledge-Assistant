@@ -1,0 +1,16 @@
+{% if folders %}
+<div class="folder-grid">
+  {% for folder in folders %}
+  <a href="/folders/{{ folder.id }}" class="folder-card">
+    <div class="folder-icon">📁</div>
+    <div class="folder-name folder-name-editable" data-folder-id="{{ folder.id }}">{{ folder.name }}</div>
+    <div class="folder-count">{{ folder.document_count }} doc{{ 's' if folder.document_count != 1 else '' }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📁</div>
+  <div class="empty-title">No folders yet</div>
+</div>
+{% endif %}

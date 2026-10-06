@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} — KnowledgeBase AI{% endblock %}
+{% block page_title %}Document{% endblock %}
+
+{% block topbar_actions %}
+<a href="/chat?q={{ doc.title }}" class="btn btn-primary btn-sm">Ask AI about this</a>
+{% endblock %}
+
+{% block content %}
+{% set active_page = 'documents' %}
+
+<div class="breadcrumb">
+  <a href="/documents">Documents</a>
+  {% if doc.folder %}
+  <span class="breadcrumb-sep">/</span>
+  <a href="/folders/{{ doc.folder.id }}">{{ doc.folder.name }}</a>
+  {% endif %}
+  <span class="breadcrumb-sep">/</span>
+  <span>{{ doc.title }}</span>
+</div>
+
+<div class="grid-2 gap-6" style="align-items:start">
+
+  <!-- Content preview -->
+  <div class="card" style="grid-column:1/2">
+    <div class="card-header">
+      <div>
+        <div class="card-title">{{ doc.title }}</div>
+        <div class="card-sub">{{ doc.original_filename }} · {{ doc.size_display }}</div>
+      </div>
+      <div class="flex gap-2">
+        {% if doc.is_ingested %}
+        <span class="badge badge-success">Indexed</span>
+        {% else %}
+        <span class="badge badge-neutral">Not indexed</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if content %}
+    <div class="md-preview" style="max-height:500px;overflow-y:auto;padding:.25rem">
+      <pre style="white-space:pre-wrap;font-family:inherit;background:none;border:none;padding:0">{{ content[:3000] }}{% if content|length > 3000 %}
+
+... (truncated, {{ content|length }} chars total){% endif %}</pre>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">Preview not available</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Metadata & actions -->
+  <div style="display:flex;flex-direction:column;gap:1rem">
+
+    <!-- Details -->
+    <div class="card">
+      <div class="card-title mb-3">Details</div>
+      <dl style="display:grid;gap:.625rem">
+        <div><dt class="text-xs text-dim">Filename</dt><dd style="font-size:.875rem;color:var(--c-text)">{{ doc.original_filename }}</dd></div>
+        <div><dt class="text-xs text-dim">Size</dt><dd style="font-size:.875rem;color:var(--c-text)">{{ doc.size_display }}</dd></div>
+        <div><dt class="text-xs text-dim">Uploaded</dt><dd style="font-size:.875rem;color:var(--c-text)">{{ doc.created_at.strftime('%B %d, %Y at %H:%M') }}</dd></div>
+        <div>
+          <dt class="text-xs text-dim">Folder</dt>
+          <dd style="font-size:.875rem;color:var(--c-text)">
+            {% if doc.folder %}<a href="/folders/{{ doc.folder.id }}">📁 {{ doc.folder.name }}</a>{% else %}—{% endif %}
+          </dd>
+        </div>
+        {% if doc.tags_list %}
+        <div>
+          <dt class="text-xs text-dim mb-1">Tags</dt>
+          <dd><div class="flex gap-1" style="flex-wrap:wrap">
+            {% for tag in doc.tags_list %}
+            <span class="badge badge-neutral">{{ tag }}</span>
+            {% endfor %}
+          </div></dd>
+        </div>
+        {% endif %}
+      </dl>
+    </div>
+
+    <!-- Edit -->
+    <div class="card">
+      <div class="card-title mb-3">Edit details</div>
+      <form action="/documents/{{ doc.id }}/edit" method="post">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input class="form-input" type="text" name="title" value="{{ doc.title }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags</label>
+          <input class="form-input" type="text" name="tags" value="{{ doc.tags or '' }}" placeholder="tag1, tag2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" name="description" rows="2">{{ doc.description or '' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+      </form>
+    </div>
+
+    <!-- Move -->
+    <div class="card">
+      <div class="card-title mb-3">Move to folder</div>
+      <form action="/documents/{{ doc.id }}/move" method="post"
+            hx-post="/documents/{{ doc.id }}/move"
+            hx-target="#move-result"
+            hx-swap="innerHTML">
+        <div class="flex gap-2">
+          <select class="form-select" name="folder_id" style="flex:1">
+            <option value="">— No folder —</option>
+            {% for f in folders %}
+            <option value="{{ f.id }}" {% if doc.folder and doc.folder.id == f.id %}selected{% endif %}>📁 {{ f.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-secondary btn-sm">Move</button>
+        </div>
+        <div id="move-result" style="margin-top:.5rem"></div>
+      </form>
+    </div>
+
+    <!-- Danger -->
+    <div class="card" style="border-color:rgba(239,68,68,.3)">
+      <div class="card-title mb-2" style="color:var(--c-error)">Danger zone</div>
+      <p class="text-sm mb-3">This action cannot be undone.</p>
+      <form action="/documents/{{ doc.id }}/delete" method="post">
+        <button type="submit" class="btn btn-danger btn-sm"
+                data-confirm="Permanently delete '{{ doc.title }}'?">
+          Delete document
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

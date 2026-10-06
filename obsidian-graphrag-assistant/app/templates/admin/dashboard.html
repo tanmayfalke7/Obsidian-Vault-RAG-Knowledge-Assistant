@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — KnowledgeBase AI{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+{% set active_page = 'admin' %}
+
+<div class="stats-grid mb-6">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ user_count }}</div>
+    <div class="stat-sub">registered accounts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Documents Stored</div>
+    <div class="stat-value">{{ total_docs }}</div>
+    <div class="stat-sub">across all users</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">AI Queries Used</div>
+    <div class="stat-value">{{ total_queries }}</div>
+    <div class="stat-sub">lifetime total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pending Requests</div>
+    <div class="stat-value" style="color:{% if pending_count > 0 %}var(--c-warning){% else %}var(--c-text){% endif %}">{{ pending_count }}</div>
+    <div class="stat-sub"><a href="/admin/requests">Review →</a></div>
+  </div>
+</div>
+
+<!-- Knowledge graph stats -->
+<div class="card mb-6">
+  <div class="card-title mb-3">Knowledge Graph (Neo4j)</div>
+  <div class="stats-grid">
+    <div>
+      <div class="stat-label">Notes</div>
+      <div class="stat-value" style="font-size:1.25rem">{{ graph_stats.get('notes', 0) }}</div>
+    </div>
+    <div>
+      <div class="stat-label">Chunks</div>
+      <div class="stat-value" style="font-size:1.25rem">{{ graph_stats.get('chunks', 0) }}</div>
+    </div>
+    <div>
+      <div class="stat-label">Concepts</div>
+      <div class="stat-value" style="font-size:1.25rem">{{ graph_stats.get('concepts', 0) }}</div>
+    </div>
+    <div>
+      <div class="stat-label">Relationships</div>
+      <div class="stat-value" style="font-size:1.25rem">{{ graph_stats.get('rels', 0) }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent users -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Users</div>
+    <a href="/admin/users" class="btn btn-ghost btn-sm">Manage all</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Name</th><th>Email</th><th>Documents</th><th>Queries</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        {% for u in users[:10] %}
+        <tr>
+          <td>
+            <div style="font-weight:500;color:var(--c-text)">{{ u.full_name }}</div>
+            <div class="text-xs text-dim">{{ u.username }}</div>
+          </td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.documents|length }} / {{ u.max_documents }}</td>
+          <td>{{ u.ai_queries_used }} / {{ u.max_ai_queries }}</td>
+          <td>
+            {% if u.is_admin %}
+            <span class="badge badge-primary">Admin</span>
+            {% elif u.is_active %}
+            <span class="badge badge-success">Active</span>
+            {% else %}
+            <span class="badge badge-error">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

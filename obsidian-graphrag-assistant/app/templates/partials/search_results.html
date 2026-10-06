@@ -1,0 +1,44 @@
+{% if results %}
+<div class="results-list">
+  {% for doc in results %}
+  <a href="/documents/{{ doc.id }}" style="text-decoration:none">
+    <div class="result-item">
+      <div class="doc-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="result-title">{{ doc.title }}</div>
+        <div class="result-meta">
+          {{ doc.original_filename }}
+          {% if doc.folder %} · 📁 {{ doc.folder.name }}{% endif %}
+          · {{ doc.size_display }}
+          · {{ doc.created_at.strftime('%b %d, %Y') }}
+        </div>
+        {% if doc.description %}
+        <div class="result-snippet">{{ doc.description }}</div>
+        {% endif %}
+        {% if doc.tags_list %}
+        <div style="margin-top:.375rem;display:flex;gap:.375rem;flex-wrap:wrap">
+          {% for tag in doc.tags_list %}
+          <span class="badge badge-neutral">{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+<div style="font-size:.8125rem;color:var(--c-text-dim);margin-top:.75rem">
+  {{ results|length }} result{{ 's' if results|length != 1 else '' }} for "<strong>{{ query }}</strong>"
+</div>
+{% else %}
+<div class="empty-state" style="padding:3rem">
+  <div class="empty-icon">🔍</div>
+  <div class="empty-title">No results found</div>
+  <div class="empty-sub">No documents matched "{{ query }}"</div>
+</div>
+{% endif %}

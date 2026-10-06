@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.9, pytest-8.3.4, pluggy-1.6.0
+rootdir: c:\Users\tanma\OneDrive\Desktop\TanmayFalke_Internshala_Assignment\obsidian-graphrag-assistant
+configfile: pytest.ini
+plugins: anyio-4.14.2, asyncio-0.25.3
+asyncio: mode=auto, asyncio_default_fixture_loop_scope=function
+collected 32 items
+
+tests\test_graphrag.py ................................                  [100%]
+
+============================= 32 passed in 14.77s =============================

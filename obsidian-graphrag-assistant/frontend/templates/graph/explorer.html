@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Graph Explorer · Vault GraphRAG{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/graph.css">{% endblock %}
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="eyebrow">Graph Explorer</p>
+    <h1>Knowledge graph</h1>
+  </div>
+  <div class="action-row">
+    <select class="input" id="graph-note-select">
+      <option value="">Choose note graph</option>
+      {% for note in notes %}
+      <option value="{{ note.id }}">{{ note.title }}</option>
+      {% endfor %}
+    </select>
+    <button class="button button-secondary" id="graph-reset" type="button">Reset View</button>
+    <button class="button button-secondary" id="graph-physics" type="button" aria-pressed="true">Physics On</button>
+  </div>
+</section>
+<section class="graph-layout">
+  <div class="graph-toolbar">
+    <input class="input" id="graph-node-search" placeholder="Filter nodes">
+    <button class="icon-button" id="zoom-in" type="button" title="Zoom in">+</button>
+    <button class="icon-button" id="zoom-out" type="button" title="Zoom out">-</button>
+  </div>
+  <canvas id="graph-canvas" width="1200" height="700" aria-label="Interactive graph canvas"></canvas>
+  <div class="graph-legend">
+    <span><i class="legend-note"></i> Notes</span>
+    <span><i class="legend-entity"></i> Entities</span>
+    <span><i class="legend-concept"></i> Concepts</span>
+  </div>
+</section>
+{% endblock %}
+{% block aux %}
+<section class="aux-panel">
+  <h2>Node Details</h2>
+  <div id="graph-inspector"><p class="muted">Select a node on the canvas.</p></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/graph.js" defer></script>{% endblock %}

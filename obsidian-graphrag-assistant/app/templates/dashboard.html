@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — KnowledgeBase AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/documents/upload" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Upload Document
+  </a>
+{% endblock %}
+
+{% block content %}
+{% set active_page = 'dashboard' %}
+<!-- Greeting -->
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1>Welcome back, {{ user.full_name.split()[0] }} 👋</h1>
+    <p class="mt-1">Your AI-powered knowledge assistant is ready.</p>
+  </div>
+  <a href="/chat" class="btn btn-primary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    Ask AI
+  </a>
+</div>
+
+<!-- Usage stats -->
+<div class="stats-grid mb-6">
+  <!-- Documents -->
+  <div class="stat-card">
+    <div class="stat-label">Documents</div>
+    <div class="stat-value">{{ doc_count }}</div>
+    <div class="stat-sub">of {{ doc_limit }} allowed</div>
+    <div class="stat-bar">
+      <div class="stat-bar-fill {% if doc_count >= doc_limit %}danger{% elif doc_count >= doc_limit * 0.8 %}warning{% endif %}"
+           style="width: {{ [((doc_count / doc_limit) * 100)|int, 100]|min }}%"></div>
+    </div>
+  </div>
+
+  <!-- AI Queries -->
+  <div class="stat-card">
+    <div class="stat-label">AI Queries Used</div>
+    <div class="stat-value">{{ query_used }}</div>
+    <div class="stat-sub">of {{ query_limit }} available</div>
+    <div class="stat-bar">
+      <div class="stat-bar-fill {% if query_remaining == 0 %}danger{% elif query_remaining <= 1 %}warning{% endif %}"
+           style="width: {{ [((query_used / query_limit) * 100)|int, 100]|min if query_limit > 0 else 100 }}%"></div>
+    </div>
+  </div>
+
+  <!-- Folders -->
+  <div class="stat-card">
+    <div class="stat-label">Folders</div>
+    <div class="stat-value">{{ folders|length }}</div>
+    <div class="stat-sub">knowledge collections</div>
+  </div>
+</div>
+
+{% if not can_query %}
+<div class="alert alert-warning mb-6">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+  <div>
+    <strong>AI query limit reached.</strong>
+    <span class="text-sm"> <a href="/access-request">Request additional access</a> from your administrator.</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Search bar -->
+<div class="card mb-6" style="padding:1rem">
+  <form action="/search" method="get">
+    <div class="flex gap-3">
+      <input class="form-input" type="search" name="q" placeholder="Search your documents...">
+      <button type="submit" class="btn btn-secondary">Search</button>
+      <a href="/chat" class="btn btn-primary">Ask AI</a>
+    </div>
+  </form>
+</div>
+
+<!-- Content grid -->
+<div class="grid-2 gap-6" style="align-items:start">
+
+  <!-- Recent documents -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Recent Documents</div>
+        <div class="card-sub">Last uploaded</div>
+      </div>
+      <a href="/documents" class="btn btn-ghost btn-sm">View all</a>
+    </div>
+
+    {% if recent_docs %}
+    <div style="display:flex;flex-direction:column;gap:.625rem">
+      {% for doc in recent_docs %}
+      <a href="/documents/{{ doc.id }}" style="text-decoration:none">
+        <div class="flex items-center gap-3" style="padding:.625rem .75rem;border-radius:var(--radius-sm);transition:background var(--transition);" onmouseover="this.style.background='var(--c-surface2)'" onmouseout="this.style.background=''">
+          <div class="doc-icon" style="width:32px;height:32px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div style="min-width:0;flex:1">
+            <div class="truncate" style="font-size:.875rem;font-weight:500;color:var(--c-text)">{{ doc.title }}</div>
+            <div style="font-size:.75rem;color:var(--c-text-dim)">{{ doc.size_display }} · {{ doc.created_at.strftime('%b %d') }}</div>
+          </div>
+          {% if doc.is_ingested %}
+          <span class="ingested-dot" title="Indexed in knowledge base"></span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">No documents yet</div>
+      <div class="empty-sub">Upload your first document to get started</div>
+      <a href="/documents/upload" class="btn btn-primary btn-sm">Upload</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Folders -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Folders</div>
+        <div class="card-sub">{{ folders|length }} collection{{ 's' if folders|length != 1 else '' }}</div>
+      </div>
+      <a href="/folders" class="btn btn-ghost btn-sm">Manage</a>
+    </div>
+
+    {% if folders %}
+    <div class="folder-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+      {% for folder in folders[:6] %}
+      <a href="/folders/{{ folder.id }}" class="folder-card" style="padding:1rem">
+        <div class="folder-icon">📁</div>
+        <div class="folder-name" style="font-size:.875rem">{{ folder.name }}</div>
+        <div class="folder-count">{{ folder.document_count }} doc{{ 's' if folder.document_count != 1 else '' }}</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem">
+      <div class="empty-icon">📁</div>
+      <div class="empty-title">No folders yet</div>
+      <a href="/folders" class="btn btn-ghost btn-sm mt-3">Create folder</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

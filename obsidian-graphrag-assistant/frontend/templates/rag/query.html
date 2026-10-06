@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}GraphRAG Query · Vault GraphRAG{% endblock %}
+{% block content %}
+<section class="rag-console" data-rag-page>
+  <div class="page-heading compact-heading">
+    <div>
+      <p class="eyebrow">GraphRAG</p>
+      <h1>Ask your vault</h1>
+    </div>
+  </div>
+  <form id="rag-form" class="rag-form">
+    <textarea id="rag-question" class="input query-box" required maxlength="2000" placeholder="Ask a grounded question about your notes..."></textarea>
+    <div class="panel-toolbar">
+      <select id="rag-mode" class="input compact">
+        <option>Hybrid Search</option>
+        <option>Local Entity Search</option>
+        <option>Global Summary</option>
+      </select>
+      <input id="rag-top-k" class="input tiny" type="number" min="1" max="20" value="5" aria-label="Top K">
+      <button class="button button-primary" type="submit">Run Query</button>
+    </div>
+  </form>
+  <div class="pipeline" id="rag-pipeline">
+    <span data-step="0">Vector Retrieval</span>
+    <span data-step="1">Sub-graph Extraction</span>
+    <span data-step="2">Context Synthesis</span>
+    <span data-step="3">LLM Generation</span>
+  </div>
+  <article class="panel rag-answer-panel">
+    <h2>Answer</h2>
+    <div id="rag-answer" class="answer-content muted">Results will appear here.</div>
+  </article>
+</section>
+{% endblock %}
+{% block aux %}
+<section class="aux-panel">
+  <h2>Citations</h2>
+  <div id="rag-sources"><p class="muted">Source snippets and graph triples appear after a query.</p></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/js/rag.js" defer></script>{% endblock %}

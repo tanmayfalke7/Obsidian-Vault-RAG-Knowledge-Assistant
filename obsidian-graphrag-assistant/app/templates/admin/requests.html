@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Access Requests — Admin{% endblock %}
+{% block page_title %}Access Requests{% endblock %}
+
+{% block content %}
+{% set active_page = 'admin' %}
+
+{% if requests %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>User</th><th>Type</th><th>Amount</th><th>Reason</th><th>Submitted</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for req in requests %}
+        <tr id="req-{{ req.id }}">
+          <td>
+            <div style="font-weight:500;color:var(--c-text)">{{ req.user.full_name }}</div>
+            <div class="text-xs text-dim">{{ req.user.email }}</div>
+          </td>
+          <td>
+            <span class="badge badge-neutral">
+              {{ 'More queries' if req.request_type == 'more_queries' else 'More documents' }}
+            </span>
+          </td>
+          <td style="font-weight:600;color:var(--c-text)">+{{ req.requested_amount }}</td>
+          <td>
+            <span style="font-size:.875rem;color:var(--c-text-muted)">
+              {{ req.reason or '—' }}
+            </span>
+          </td>
+          <td class="text-sm">{{ req.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:.375rem">
+              <form hx-post="/admin/requests/{{ req.id }}/approve"
+                    hx-target="#req-{{ req.id }}"
+                    hx-swap="outerHTML">
+                <input type="hidden" name="admin_note" value="Approved">
+                <button type="submit" class="btn btn-sm" style="background:var(--c-success);color:#fff;width:100%">
+                  ✓ Approve
+                </button>
+              </form>
+              <form hx-post="/admin/requests/{{ req.id }}/reject"
+                    hx-target="#req-{{ req.id }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Reject this request?">
+                <input type="hidden" name="admin_note" value="Rejected">
+                <button type="submit" class="btn btn-danger btn-sm w-full">
+                  ✕ Reject
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">✅</div>
+  <div class="empty-title">No pending requests</div>
+  <div class="empty-sub">All access requests have been resolved</div>
+</div>
+{% endif %}
+{% endblock %}

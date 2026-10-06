@@ -1,7 +1,7 @@
 """
 Script: initialize_database.py
-Creates Neo4j constraints, indexes, and the vector index.
-Safe to run multiple times (all operations use IF NOT EXISTS).
+Initializes MySQL tables + Neo4j user-scoped constraints/indexes/vector index.
+Safe to run multiple times. Does NOT delete existing data.
 """
 import sys
 import logging
@@ -23,23 +23,43 @@ logger = logging.getLogger(__name__)
 
 def main():
     print(f"\n{'='*60}")
-    print("Database Initialisation")
+    print("Database Initialisation (MySQL + Neo4j)")
     print(f"{'='*60}")
 
+    # ── MySQL ──────────────────────────────────────────────────────────────
+    print("\n── MySQL ──")
+    try:
+        from backend.db.mysql import init_mysql, engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            print(f"✓ MySQL connected: {settings.mysql_host}:{settings.mysql_port}/{settings.mysql_database}")
+            tables = conn.execute(text("SHOW TABLES")).fetchall()
+            print(f"  Existing tables: {[t[0] for t in tables]}")
+        init_mysql()
+        with engine.connect() as conn:
+            tables = conn.execute(text("SHOW TABLES")).fetchall()
+            print(f"  Tables after init: {[t[0] for t in tables]}")
+        print("✓ MySQL tables ensured")
+    except Exception as e:
+        print(f"❌ MySQL failed: {e}")
+        sys.exit(1)
+
+    # ── Neo4j ──────────────────────────────────────────────────────────────
+    print("\n── Neo4j ──")
     try:
         init_driver(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     except Exception as e:
-        print(f"❌ Driver init failed: {e}")
+        print(f"❌ Neo4j driver init failed: {e}")
         sys.exit(1)
 
     if not verify_connectivity():
         print("❌ Neo4j connection FAILED")
         sys.exit(1)
+    print(f"✓ Neo4j connected: {settings.neo4j_uri}")
 
-    print("✓ Neo4j connected")
-
-    # Constraints and indexes
-    print("\nCreating constraints and indexes...")
+    # Constraints and indexes (user-scoped)
+    print("\nCreating user-scoped constraints and indexes...")
     try:
         create_constraints_and_indexes()
         print("✓ Constraints and indexes created")
@@ -66,6 +86,7 @@ def main():
     print(f"\nVector index status: {status}")
 
     close_driver()
+
     print(f"\n✓ Database initialisation complete.")
     print(f"{'='*60}\n")
 

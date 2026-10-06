@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Search — KnowledgeBase AI{% endblock %}
+{% block page_title %}Search Documents{% endblock %}
+
+{% block content %}
+{% set active_page = 'search' %}
+
+<div style="max-width:800px">
+  <div class="alert alert-info mb-4" style="font-size:.8125rem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span>Document search finds files by name and metadata.
+    To ask a question about your documents, use <a href="/chat">Ask AI</a>.</span>
+  </div>
+
+  <!-- Search bar with HTMX live search -->
+  <div class="search-bar">
+    <input class="form-input search-input"
+           type="search"
+           name="q"
+           id="search-q"
+           value="{{ query }}"
+           placeholder="Search by title, filename, tags, description…"
+           autofocus
+           hx-get="/search"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#search-results"
+           hx-swap="innerHTML"
+           hx-include="#search-q"
+           hx-indicator="#search-spinner">
+    <span id="search-spinner" class="htmx-indicator spinner"></span>
+  </div>
+
+  <!-- Results -->
+  <div id="search-results">
+    {% include "partials/search_results.html" %}
+  </div>
+</div>
+{% endblock %}

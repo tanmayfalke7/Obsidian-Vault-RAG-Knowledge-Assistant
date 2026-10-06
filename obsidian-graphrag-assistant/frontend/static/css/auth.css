@@ -1,0 +1,4 @@
+/* Auth-specific hooks live in main.css; this file is intentionally small. */
+.auth-form .input:invalid:not(:placeholder-shown) {
+  border-color: var(--danger);
+}

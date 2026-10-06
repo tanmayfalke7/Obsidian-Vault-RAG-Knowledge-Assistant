@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Folders — KnowledgeBase AI{% endblock %}
+{% block page_title %}Folders{% endblock %}
+
+{% block content %}
+{% set active_page = 'folders' %}
+
+<!-- Create folder form -->
+<div class="card mb-6" style="max-width:480px">
+  <div class="card-title mb-3">Create new folder</div>
+  <form hx-post="/folders/create"
+        hx-target="#folder-grid"
+        hx-swap="innerHTML">
+    <div class="form-group">
+      <input class="form-input" type="text" name="name" placeholder="Folder name" required>
+    </div>
+    <div class="form-group">
+      <input class="form-input" type="text" name="description" placeholder="Description (optional)">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Create folder</button>
+  </form>
+</div>
+
+<div id="folder-grid">
+  {% include "partials/folder_list.html" %}
+</div>
+{% endblock %}

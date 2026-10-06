@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Ask AI — KnowledgeBase AI{% endblock %}
+{% block page_title %}Ask AI{% endblock %}
+
+{% block topbar_actions %}
+<span class="text-sm text-dim">
+  {{ query_used }} / {{ query_limit }} queries used
+</span>
+{% if not can_query %}
+<a href="/access-request" class="btn btn-secondary btn-sm">Request more</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% set active_page = 'chat' %}
+<style>
+  .content { padding: 0; }
+</style>
+
+<div class="chat-layout">
+  <!-- Messages area -->
+  <div class="chat-messages" id="chat-messages">
+
+    {% if can_query %}
+    <!-- Welcome state (hidden once user asks) -->
+    <div id="chat-welcome" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem;text-align:center">
+      <div style="width:64px;height:64px;border-radius:18px;background:var(--c-primary);display:grid;place-items:center;margin:0 auto">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <h2 style="color:var(--c-text);margin-bottom:.5rem">Ask your knowledge base</h2>
+        <p>I'll search your documents and provide grounded answers with sources.</p>
+      </div>
+      <!-- Example prompts -->
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;max-width:600px">
+        {% set examples = [
+          "What is RAG?",
+          "How are embeddings related to vector search?",
+          "What should I learn before GraphRAG?",
+          "Explain the relationship between Neo4j and graph databases",
+          "What technologies does the JARVIS project use?"
+        ] %}
+        {% for ex in examples %}
+        <button class="btn btn-secondary btn-sm example-prompt" data-prompt="{{ ex }}">{{ ex }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Limit reached -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;text-align:center">
+      <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+      <h2 style="color:var(--c-text);margin-bottom:.5rem">Query limit reached</h2>
+      <p>You've used all {{ query_limit }} AI queries for this period.</p>
+      <a href="/access-request" class="btn btn-primary mt-4">Request additional access</a>
+    </div>
+    {% endif %}
+
+    <!-- HTMX answer target -->
+    <div id="answer-stream"></div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="chat-input-bar">
+    <form id="chat-form"
+          hx-post="/chat/ask"
+          hx-target="#answer-stream"
+          hx-swap="beforeend"
+          hx-indicator="#chat-spinner"
+          {% if not can_query %}style="opacity:.5;pointer-events:none"{% endif %}>
+      <div class="chat-input-row">
+        <textarea
+          class="chat-input"
+          name="question"
+          id="chat-question"
+          placeholder="{% if can_query %}Ask anything about your knowledge base… (Enter to send){% else %}Query limit reached — request more access{% endif %}"
+          rows="1"
+          {% if not can_query %}disabled{% endif %}></textarea>
+        <button type="submit"
+                id="chat-submit-btn"
+                class="btn btn-primary"
+                {% if not can_query %}disabled{% endif %}>
+          <span id="chat-spinner" class="htmx-indicator spinner"></span>
+          <svg id="send-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div style="text-align:center;font-size:.75rem;color:var(--c-text-dim);margin-top:.5rem">
+        Chat history is not saved. Every conversation is temporary.
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Example prompt click
+document.querySelectorAll('.example-prompt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById('chat-question');
+    if (input) {
+      input.value = btn.dataset.prompt;
+      input.focus();
+      document.getElementById('chat-welcome')?.remove();
+    }
+  });
+});
+
+// Hide welcome on first submit
+document.getElementById('chat-form')?.addEventListener('htmx:beforeRequest', () => {
+  document.getElementById('chat-welcome')?.remove();
+});
+</script>
+{% endblock %}

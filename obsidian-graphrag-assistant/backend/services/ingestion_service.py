@@ -1,20 +1,31 @@
 """
-Ingestion service — orchestrates parsing, chunking, embedding, and graph building.
+Ingestion service — user-scoped Markdown ingestion into Neo4j.
 
-Pipeline:
-  data/vault/*.md
-      → parse_vault()
-      → chunk_note()
-      → embed_texts()
-      → upsert Note / Chunk / Concept nodes
-      → create relationships
+Every node and relationship created here carries the user_id of the
+authenticated user. No cross-tenant data is ever created or traversed.
+
+ID scheme (deterministic, user-scoped):
+  note_id:    {user_id}:{mysql_note_id}
+  chunk_id:   {user_id}:{mysql_note_id}:chunk:{index}
+  concept_id: {user_id}:concept:{normalized_name}
+
+Public interface:
+  ingest_note(note_id, user_id, content, title, filename)
+    → Ingest a single user's Markdown note content
+  run_ingestion(vault_path, user_id, reset)
+    → Ingest the sample vault for a specific user
 """
 import logging
 import re
 from pathlib import Path
 from dataclasses import dataclass
 
-from backend.utils.markdown_parser import parse_vault, chunk_note, ParsedNote
+import frontmatter
+
+from backend.utils.markdown_parser import (
+    parse_note, chunk_note, ParsedNote,
+    _WIKI_LINK_RE, _H1_RE, _HEADING_RE,
+)
 from backend.services import embedding_service, graph_service
 from backend.core.config import settings
 
@@ -35,15 +46,11 @@ class IngestionStats:
             self.errors = []
 
 
-# ── Concept relationship map ───────────────────────────────────────────────────
-# Declarative definition of concept-to-concept relationships for the sample vault.
-# These mirror the spec's required relationships.
+# ── Concept relationship map (sample vault ontology) ────────────────────────
 CONCEPT_RELATIONSHIPS: list[tuple[str, str, str]] = [
-    # AI domain
     ("AI", "RELATED_TO", "LLM"),
     ("LLM", "USES", "Prompt Engineering"),
     ("LLM", "HAS_CONSTRAINT", "Context Window"),
-    # RAG ecosystem
     ("RAG", "USES", "LLM"),
     ("RAG", "USES", "Embeddings"),
     ("RAG", "USES", "Retrieval"),
@@ -51,35 +58,27 @@ CONCEPT_RELATIONSHIPS: list[tuple[str, str, str]] = [
     ("RAG", "USES", "Vector Search"),
     ("RAG", "USES", "Chunking"),
     ("RAG", "RELATED_TO", "Semantic Search"),
-    # Embeddings chain
     ("Embeddings", "ENABLES", "Semantic Search"),
     ("Embeddings", "ENABLES", "Vector Search"),
-    # Vector search
     ("Vector Search", "USES", "Embeddings"),
     ("Vector Search", "USES", "Vector Database"),
     ("Vector Database", "STORES", "Embeddings"),
-    # GraphRAG
     ("GraphRAG", "EXTENDS", "RAG"),
     ("GraphRAG", "USES", "Knowledge Graph"),
     ("GraphRAG", "USES", "Vector Search"),
     ("GraphRAG", "USES", "Neo4j"),
     ("GraphRAG", "USES", "Embeddings"),
-    # Knowledge graph
     ("Knowledge Graph", "CONTAINS", "Concept"),
     ("Neo4j", "IMPLEMENTS", "Knowledge Graph"),
     ("Neo4j", "PROVIDES", "Vector Search"),
-    # Framework
     ("FastAPI", "BUILT_WITH", "Python"),
     ("Streamlit", "BUILT_WITH", "Python"),
-    # JARVIS
     ("JARVIS", "BUILT_WITH", "Python"),
     ("JARVIS", "USES", "LLM"),
     ("JARVIS", "USES", "MCP"),
-    # Retrieval chain
     ("Chunking", "SUPPORTS", "Retrieval"),
     ("Retrieval", "PROVIDES", "Context"),
     ("Context Window", "RELATED_TO", "RAG"),
-    # Learning path prerequisites
     ("Python", "PREREQUISITE_OF", "LLM"),
     ("LLM", "PREREQUISITE_OF", "Embeddings"),
     ("Embeddings", "PREREQUISITE_OF", "Vector Search"),
@@ -90,87 +89,184 @@ CONCEPT_RELATIONSHIPS: list[tuple[str, str, str]] = [
 ]
 
 
-def _concept_id(name: str) -> str:
-    """Derive a stable, lowercase slug ID from a concept name."""
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+# ── User-scoped ID derivation ─────────────────────────────────────────────────
+
+def _neo4j_note_id(user_id: str, mysql_note_id: str) -> str:
+    """Stable Neo4j note ID: {user_id}:{note_id}"""
+    return f"{user_id}:{mysql_note_id}"
 
 
-def _note_id(filename: str) -> str:
-    """Derive a stable ID from a note filename."""
+def _neo4j_chunk_id(user_id: str, note_id: str, index: int) -> str:
+    """Stable Neo4j chunk ID: {user_id}:{note_id}:chunk:{index}"""
+    return f"{user_id}:{note_id}:chunk:{index}"
+
+
+def _neo4j_concept_id(user_id: str, concept_name: str) -> str:
+    """Stable Neo4j concept ID: {user_id}:concept:{normalized_name}"""
+    slug = re.sub(r"[^a-z0-9]+", "-", concept_name.lower()).strip("-")
+    return f"{user_id}:concept:{slug}"
+
+
+def _slug_from_filename(filename: str) -> str:
+    """Derive a slug from a filename stem (for vault-based note IDs)."""
     return re.sub(r"[^a-z0-9]+", "-", Path(filename).stem.lower()).strip("-")
 
 
-def _chunk_id(note_id: str, index: int) -> str:
-    return f"{note_id}-chunk-{index}"
+# ── Markdown parsing from content string ────────────────────────────────────
+
+def _parse_content(raw: str, filename: str) -> ParsedNote:
+    """Parse Markdown content string into ParsedNote (no file I/O)."""
+    try:
+        post = frontmatter.loads(raw)
+        meta: dict = dict(post.metadata)
+        body: str = post.content
+    except Exception:
+        meta = {}
+        body = raw
+
+    title: str = str(meta.get("title", ""))
+    if not title:
+        h1_match = _H1_RE.search(body)
+        title = h1_match.group(1).strip() if h1_match else Path(filename).stem
+
+    headings = [m.group(2).strip() for m in _HEADING_RE.finditer(body)]
+
+    raw_links = _WIKI_LINK_RE.findall(body)
+    wiki_links = list(dict.fromkeys(
+        link.strip().replace("_", " ") for link in raw_links
+    ))
+
+    raw_tags = meta.get("tags", [])
+    if isinstance(raw_tags, str):
+        raw_tags = [t.strip() for t in raw_tags.split(",")]
+    tags = [str(t) for t in raw_tags]
+
+    return ParsedNote(
+        filename=filename,
+        filepath="",
+        title=title,
+        content=raw,
+        body=body,
+        headings=headings,
+        wiki_links=wiki_links,
+        tags=tags,
+        frontmatter_meta=meta,
+    )
 
 
-def ensure_all_concepts(stats: IngestionStats) -> dict[str, str]:
-    """
-    Ensure all known concepts exist in Neo4j.
-    Returns a name → id mapping.
-    """
-    all_names: set[str] = set()
-    for src, _, tgt in CONCEPT_RELATIONSHIPS:
-        all_names.add(src)
-        all_names.add(tgt)
+# ── Per-user concept management ──────────────────────────────────────────────
 
+def ensure_user_concepts(
+    user_id: str,
+    concept_names: set[str],
+    stats: IngestionStats,
+) -> dict[str, str]:
+    """Create per-user Concept nodes. Returns name→id map."""
     name_to_id: dict[str, str] = {}
-    for name in sorted(all_names):
-        cid = _concept_id(name)
-        graph_service.upsert_concept(cid, name)
+    for name in sorted(concept_names):
+        cid = _neo4j_concept_id(user_id, name)
+        graph_service.upsert_concept(cid, user_id, name)
         name_to_id[name] = cid
         stats.concepts_created += 1
-
-    logger.info("Ensured %d concepts in graph.", len(name_to_id))
+    logger.info("Ensured %d concepts for user %s", len(name_to_id), user_id)
     return name_to_id
 
 
-def create_concept_relationships(
-    concept_name_to_id: dict[str, str], stats: IngestionStats
+def create_user_concept_relationships(
+    user_id: str,
+    concept_name_to_id: dict[str, str],
+    stats: IngestionStats,
 ) -> None:
-    """Create all predefined concept-to-concept relationships."""
+    """Create concept-to-concept relationships from the ontology map, scoped to user_id."""
     for src_name, rel_type, tgt_name in CONCEPT_RELATIONSHIPS:
         src_id = concept_name_to_id.get(src_name)
         tgt_id = concept_name_to_id.get(tgt_name)
         if not src_id or not tgt_id:
-            logger.warning("Missing concept for relationship: %s → %s", src_name, tgt_name)
             continue
-        graph_service.create_concept_relationship(src_id, rel_type, tgt_id)
+        graph_service.create_concept_relationship(src_id, rel_type, tgt_id, user_id)
         stats.relationships_created += 1
 
-    logger.info("Created %d concept relationships.", stats.relationships_created)
 
+# ── Stale chunk cleanup ──────────────────────────────────────────────────────
+
+def delete_stale_chunks(note_id: str, user_id: str) -> None:
+    """Delete old chunks for a note before re-indexing. User-scoped."""
+    cypher = """
+    MATCH (c:Chunk {note_id: $note_id, user_id: $user_id})
+    DETACH DELETE c
+    """
+    from backend.db.neo4j_client import run_query
+    run_query(
+        cypher,
+        {"note_id": note_id, "user_id": user_id},
+        database=settings.neo4j_database,
+    )
+    logger.debug("Deleted stale chunks for note %s (user %s)", note_id, user_id)
+
+
+# ── Core: ingest a single note for a user ───────────────────────────────────
 
 def ingest_note(
-    note: ParsedNote,
-    concept_name_to_id: dict[str, str],
-    stats: IngestionStats,
-) -> None:
-    """Process a single note: upsert it, chunk it, link to concepts."""
-    note_id = _note_id(note.filename)
+    note_id: str,
+    user_id: str,
+    content: str,
+    title: str,
+    filename: str,
+    stats: IngestionStats | None = None,
+) -> IngestionStats:
+    """
+    Ingest a single user's Markdown note into Neo4j.
+
+    Args:
+        note_id:   MySQL note UUID (stable cross-store identifier)
+        user_id:   Authenticated user's UUID
+        content:   Raw Markdown content
+        title:     Note title
+        filename:  Original filename (e.g. "my_note.md")
+        stats:     Optional shared stats object
+
+    Returns IngestionStats.
+    """
+    if stats is None:
+        stats = IngestionStats()
+
+    # User-scoped Neo4j IDs
+    neo4j_note_id = _neo4j_note_id(user_id, note_id)
+
+    # Ensure User node exists in Neo4j
+    graph_service.upsert_user_node(user_id, name="")
+
+    # Delete stale chunks from previous ingestion (re-index safety)
+    delete_stale_chunks(neo4j_note_id, user_id)
 
     # Upsert Note node
     graph_service.upsert_note(
-        note_id=note_id,
-        title=note.title,
-        filename=note.filename,
-        filepath=note.filepath,
-        content=note.content,
+        note_id=neo4j_note_id,
+        user_id=user_id,
+        title=title,
+        filename=filename,
+        filepath="",
+        content=content,
     )
     stats.notes_processed += 1
 
-    # Chunk the note
-    chunks = chunk_note(note, max_chars=800, overlap=100)
-    if not chunks:
-        chunks = [note.body[:1500]] if note.body.strip() else []
+    # Parse markdown content
+    parsed = _parse_content(content, filename)
 
+    # Chunk the note
+    chunks = chunk_note(parsed, max_chars=800, overlap=100)
+    if not chunks:
+        chunks = [parsed.body[:1500]] if parsed.body.strip() else []
+
+    # Create Chunk nodes
     chunk_texts = []
     chunk_ids = []
     for i, chunk_text in enumerate(chunks):
-        cid = _chunk_id(note_id, i)
+        cid = _neo4j_chunk_id(user_id, note_id, i)
         graph_service.upsert_chunk(
             chunk_id=cid,
-            note_id=note_id,
+            user_id=user_id,
+            note_id=neo4j_note_id,
             text=chunk_text,
             chunk_index=i,
         )
@@ -178,7 +274,7 @@ def ingest_note(
         chunk_texts.append(chunk_text)
         stats.chunks_created += 1
 
-    # Generate embeddings for all chunks in this note
+    # Generate embeddings
     if chunk_texts:
         try:
             embeddings = embedding_service.embed_texts(chunk_texts)
@@ -187,64 +283,63 @@ def ingest_note(
                     graph_service.set_chunk_embedding(cid, emb)
                     stats.embeddings_generated += 1
         except Exception as e:
-            msg = f"Embedding failed for note {note.filename}: {e}"
+            msg = f"Embedding failed for note {filename}: {e}"
             logger.error(msg)
             stats.errors.append(msg)
 
-    # Link chunks → concepts via MENTIONS (based on wiki-links in body)
-    for link in note.wiki_links:
-        concept_id = concept_name_to_id.get(link)
-        if concept_id:
-            for cid in chunk_ids:
-                graph_service.link_chunk_to_concept(cid, concept_id)
-                stats.relationships_created += 1
+    # Extract concepts from wiki-links and create per-user Concept nodes
+    wiki_concept_names = set(parsed.wiki_links)
+    # Also add concepts from the hardcoded ontology that appear in wiki-links
+    ontology_names = set()
+    for src, _, tgt in CONCEPT_RELATIONSHIPS:
+        if src in wiki_concept_names:
+            ontology_names.add(src)
+        if tgt in wiki_concept_names:
+            ontology_names.add(tgt)
+
+    all_concept_names = wiki_concept_names | ontology_names
+    if all_concept_names:
+        concept_name_to_id = ensure_user_concepts(user_id, all_concept_names, stats)
+
+        # Link chunks → concepts via MENTIONS
+        for link in parsed.wiki_links:
+            concept_id = concept_name_to_id.get(link)
+            if concept_id:
+                for cid in chunk_ids:
+                    graph_service.link_chunk_to_concept(cid, concept_id, user_id)
+                    stats.relationships_created += 1
+
+        # Create concept-to-concept relationships from the ontology
+        create_user_concept_relationships(user_id, concept_name_to_id, stats)
+
+    logger.info(
+        "Ingested note %s for user %s: %d chunks, %d embeddings",
+        filename, user_id, len(chunks), stats.embeddings_generated,
+    )
+    return stats
 
 
-def ingest_note_to_note_links(
-    notes: list[ParsedNote],
-    stats: IngestionStats,
-) -> None:
+# ── Vault ingestion (sample vault, user-scoped) ──────────────────────────────
+
+def run_ingestion(
+    vault_path: Path,
+    user_id: str = "system",
+    reset: bool = False,
+) -> IngestionStats:
     """
-    After all notes are ingested, create LINKS_TO edges between notes
-    based on wiki-link targets that match a note stem.
-    """
-    # Build a map: normalised stem → note_id
-    stem_map: dict[str, str] = {}
-    for note in notes:
-        stem = Path(note.filename).stem
-        # Remove numeric prefix (e.g. "03_RAG" → "RAG", "03_RAG" → "03 RAG")
-        clean_stem = re.sub(r"^\d+_?", "", stem).replace("_", " ")
-        stem_map[clean_stem.lower()] = _note_id(note.filename)
+    Ingest the sample vault directory for a specific user.
+    Each .md file becomes a note with a deterministic note_id derived from the filename.
 
-    for note in notes:
-        source_id = _note_id(note.filename)
-        for link in note.wiki_links:
-            target_key = link.lower().replace("_", " ")
-            target_id = stem_map.get(target_key)
-            if target_id and target_id != source_id:
-                graph_service.link_note_to_note(source_id, target_id)
-                stats.relationships_created += 1
-
-
-def run_ingestion(vault_path: Path, reset: bool = False) -> IngestionStats:
-    """
-    Full ingestion pipeline.
-
-    1. Optionally reset project data
-    2. Ensure constraints / indexes / vector index
-    3. Ensure concepts
-    4. Parse vault
-    5. Ingest each note (chunks + embeddings + links)
-    6. Create concept-to-concept relationships
-    7. Create note-to-note links
-
-    Returns IngestionStats.
+    Args:
+        vault_path: Path to the vault directory
+        user_id:    The user to ingest for (default "system" for legacy compatibility)
+        reset:      If True, delete this user's existing Neo4j data first
     """
     stats = IngestionStats()
 
     if reset:
-        logger.warning("Resetting project data as requested.")
-        graph_service.delete_project_data()
+        logger.warning("Resetting Neo4j data for user %s", user_id)
+        graph_service.delete_user_neo4j_data(user_id)
 
     # Ensure schema
     graph_service.create_constraints_and_indexes()
@@ -253,41 +348,43 @@ def run_ingestion(vault_path: Path, reset: bool = False) -> IngestionStats:
         dimensions=settings.embedding_dimensions,
     )
 
-    # Ensure all concepts exist first
-    concept_name_to_id = ensure_all_concepts(stats)
+    # Ensure User node
+    graph_service.upsert_user_node(user_id, name="system")
 
     # Parse vault
+    from backend.utils.markdown_parser import parse_vault
     notes = parse_vault(vault_path)
     if not notes:
         logger.error("No notes found in vault: %s", vault_path)
         stats.errors.append(f"No notes found in vault: {vault_path}")
         return stats
 
-    logger.info("Starting ingestion of %d notes...", len(notes))
+    logger.info("Starting vault ingestion of %d notes for user %s...", len(notes), user_id)
 
     # Ingest each note
     for note in notes:
         try:
-            ingest_note(note, concept_name_to_id, stats)
-            logger.info(
-                "Ingested: %s (concepts=%d, errors_so_far=%d)",
-                note.filename,
-                len(note.wiki_links),
-                len(stats.errors),
+            # Use a deterministic note_id derived from filename for the sample vault
+            mysql_note_id = _slug_from_filename(note.filename)
+            ingest_note(
+                note_id=mysql_note_id,
+                user_id=user_id,
+                content=note.content,
+                title=note.title,
+                filename=note.filename,
+                stats=stats,
             )
         except Exception as e:
             msg = f"Failed to ingest {note.filename}: {e}"
             logger.error(msg)
             stats.errors.append(msg)
 
-    # Concept-to-concept relationships
-    create_concept_relationships(concept_name_to_id, stats)
-
-    # Note-to-note links
-    ingest_note_to_note_links(notes, stats)
+    # Create note-to-note links based on wiki-links
+    _create_note_to_note_links(notes, user_id, stats)
 
     logger.info(
-        "Ingestion complete. Notes=%d Chunks=%d Concepts=%d Rels=%d Embeddings=%d Errors=%d",
+        "Ingestion complete for user %s: Notes=%d Chunks=%d Concepts=%d Rels=%d Embeddings=%d Errors=%d",
+        user_id,
         stats.notes_processed,
         stats.chunks_created,
         stats.concepts_created,
@@ -296,3 +393,27 @@ def run_ingestion(vault_path: Path, reset: bool = False) -> IngestionStats:
         len(stats.errors),
     )
     return stats
+
+
+def _create_note_to_note_links(
+    notes: list[ParsedNote],
+    user_id: str,
+    stats: IngestionStats,
+) -> None:
+    """Create LINKS_TO edges between notes based on wiki-link targets."""
+    stem_map: dict[str, str] = {}
+    for note in notes:
+        stem = Path(note.filename).stem
+        clean_stem = re.sub(r"^\d+_?", "", stem).replace("_", " ")
+        slug = _slug_from_filename(note.filename)
+        stem_map[clean_stem.lower()] = _neo4j_note_id(user_id, slug)
+
+    for note in notes:
+        source_slug = _slug_from_filename(note.filename)
+        source_id = _neo4j_note_id(user_id, source_slug)
+        for link in note.wiki_links:
+            target_key = link.lower().replace("_", " ")
+            target_id = stem_map.get(target_key)
+            if target_id and target_id != source_id:
+                graph_service.link_note_to_note(source_id, target_id, user_id)
+                stats.relationships_created += 1

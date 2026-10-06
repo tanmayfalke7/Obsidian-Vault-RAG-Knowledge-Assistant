@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Request Access — KnowledgeBase AI{% endblock %}
+{% block page_title %}Request Additional Access{% endblock %}
+
+{% block content %}
+
+{% if success %}<div class="alert alert-success mb-4" data-auto-dismiss>{{ success }}</div>{% endif %}
+{% if error   %}<div class="alert alert-error  mb-4">{{ error }}</div>{% endif %}
+
+<div style="max-width:520px">
+  <div class="card">
+    <div class="card-title mb-1">Request additional limits</div>
+    <p class="text-sm mb-4">Your administrator will review and respond to your request.</p>
+
+    <form action="/access-request" method="post">
+      <div class="form-group">
+        <label class="form-label">Request type</label>
+        <select class="form-select" name="request_type" required>
+          <option value="more_queries">More AI queries</option>
+          <option value="more_documents">More document slots</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amount requested</label>
+        <input class="form-input" type="number" name="requested_amount"
+               min="1" max="100" value="10" required>
+        <div class="form-hint">How many additional queries or documents do you need?</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Reason <span class="text-dim">(optional but recommended)</span></label>
+        <textarea class="form-textarea" name="reason"
+                  placeholder="Briefly explain why you need additional access…"></textarea>
+      </div>
+
+      <!-- Current usage context -->
+      <div class="alert alert-info" style="font-size:.8125rem;margin-bottom:1.25rem">
+        Current usage: {{ user.ai_queries_used }}/{{ user.max_ai_queries }} queries,
+        {{ user.documents|length }}/{{ user.max_documents }} documents
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">Submit request</button>
+        <a href="/profile" class="btn btn-secondary">Back to profile</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -35,11 +35,16 @@ def main():
     init_embedding_service(settings.embedding_model)
     init_llm_service(settings.groq_api_key, settings.groq_llm_model)
 
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--user-id", default="system")
+    args = parser.parse_args()
+
     for i, question in enumerate(DEMO_QUESTIONS, 1):
         print(f"\nQ{i}: {question}")
         print("-" * 50)
         try:
-            result = ask(question)
+            result = ask(question, user_id=args.user_id)
             print(f"Answer:\n{result.answer}\n")
             if result.sources:
                 print("Sources:")

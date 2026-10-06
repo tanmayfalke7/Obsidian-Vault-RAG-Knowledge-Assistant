@@ -47,6 +47,7 @@ def query(request: QueryRequest):
     try:
         result = rag_service.ask(
             question=request.question,
+            user_id="system",  # Legacy endpoint uses system scope
             top_k=request.top_k,
         )
     except Exception as e:
@@ -91,23 +92,28 @@ def ingest(request: IngestRequest = None):
     if request is None:
         request = IngestRequest()
 
+    project_root = Path(__file__).resolve().parents[2]
     vault_path = (
-        Path(request.vault_path)
+        Path(request.vault_path).expanduser()
         if request.vault_path
         else settings.vault_path
-    )
+    ).resolve()
+    try:
+        vault_path.relative_to(project_root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Vault path must stay inside the project directory.")
 
     if not vault_path.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Vault path does not exist: {vault_path}",
+            detail="Vault path does not exist.",
         )
 
     try:
-        stats = ingestion_service.run_ingestion(vault_path, reset=request.reset)
+        stats = ingestion_service.run_ingestion(vault_path, user_id="system", reset=request.reset)
     except Exception as e:
         logger.error("Ingestion failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}") from e
+        raise HTTPException(status_code=500, detail="Ingestion failed.") from e
 
     return IngestResponse(
         success=len(stats.errors) == 0,
@@ -126,7 +132,7 @@ def ingest(request: IngestRequest = None):
 def list_sources():
     """List all notes stored in the knowledge base."""
     try:
-        notes = graph_service.get_all_notes()
+        notes = graph_service.get_all_notes(user_id="system")
     except Exception as e:
         logger.error("Failed to fetch sources: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch sources.") from e
@@ -152,7 +158,7 @@ def list_sources():
 def get_graph_neighbours(concept: str = FPath(..., description="Concept name")):
     """Return the 1-hop graph neighbourhood of a named concept."""
     try:
-        results = graph_service.get_concept_neighbours(concept)
+        results = graph_service.get_concept_neighbours(concept, user_id="system")
     except Exception as e:
         logger.error("Graph lookup failed for '%s': %s", concept, e)
         raise HTTPException(status_code=500, detail="Graph lookup failed.") from e
@@ -195,7 +201,7 @@ def get_graph_neighbours(concept: str = FPath(..., description="Concept name")):
 def get_stats():
     """Return knowledge base statistics."""
     try:
-        raw = graph_service.get_graph_stats()
+        raw = graph_service.get_graph_stats(user_id="system")
         index_status = graph_service.get_vector_index_status(settings.vector_index_name)
     except Exception as e:
         logger.error("Stats query failed: %s", e)

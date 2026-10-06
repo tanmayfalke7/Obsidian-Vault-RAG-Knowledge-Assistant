@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Notes · Vault GraphRAG{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/editor.css">{% endblock %}
+{% block content %}
+<section class="notes-workbench" data-notes-page data-initial-note-id="{{ initial_note_id or '' }}">
+  <div class="notes-list-panel">
+    <div class="panel-toolbar">
+      <input class="input" id="note-search" type="search" placeholder="Search notes">
+      <select class="input compact" id="note-sort">
+        <option value="updated_at:desc">Updated desc</option>
+        <option value="updated_at:asc">Updated asc</option>
+        <option value="title:asc">Title A-Z</option>
+      </select>
+    </div>
+    <div class="panel-toolbar">
+      <button class="button button-primary" id="new-note-btn" type="button">+ New Note</button>
+      <label class="button button-yellow">
+        Upload .md
+        <input hidden id="note-upload" type="file" accept=".md,text/markdown">
+      </label>
+    </div>
+    <div id="note-list" class="note-list" aria-live="polite"></div>
+  </div>
+
+  <article class="editor-panel">
+    <header class="editor-header">
+      <input class="title-input" id="note-title" placeholder="Untitled note">
+      <span id="dirty-indicator" class="dirty-dot" hidden title="Unsaved changes"></span>
+      <select class="input compact" id="folder-select">
+        <option value="">Unfiled</option>
+        {% for folder in folders %}
+        <option value="{{ folder.id }}">{{ folder.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="button button-primary" id="save-note-btn" type="button">Save</button>
+      <button class="button button-secondary" id="reindex-note-btn" type="button">Reindex</button>
+      <button class="button button-danger" id="delete-note-btn" type="button">Delete</button>
+    </header>
+    <div class="editor-toolbar" role="toolbar" aria-label="Markdown toolbar">
+      <button data-insert="**|**" title="Bold">B</button>
+      <button data-insert="*|*" title="Italic"><em>I</em></button>
+      <button data-insert="`|`" title="Inline code">{ }</button>
+      <button data-insert="## |" title="Heading">H2</button>
+      <button data-insert="[label](url)|" title="Link">Link</button>
+      <button data-insert="| Column | Value |\n| --- | --- |\n|  |  |\n|" title="Table">Table</button>
+      <button data-insert="[[Concept]]|" title="WikiLink">[[ ]]</button>
+    </div>
+    <div class="split-editor">
+      <textarea id="note-content" class="markdown-editor" spellcheck="true" placeholder="Write Markdown here..."></textarea>
+      <div id="note-preview" class="markdown-preview" aria-label="Markdown preview"></div>
+    </div>
+  </article>
+</section>
+{% endblock %}
+{% block aux %}
+<section class="aux-panel">
+  <h2>GraphRAG Inspector</h2>
+  <div id="note-inspector">
+    <p class="muted">Open a note to inspect source metadata, wiki-links, and graph context.</p>
+  </div>
+  <form id="note-rag-form" class="note-rag-form" hidden>
+    <label for="note-rag-question">Explore with GraphRAG</label>
+    <textarea id="note-rag-question" class="input" maxlength="2000" placeholder="What technologies are mentioned in this note?"></textarea>
+    <button class="button button-primary" type="submit">Ask Note</button>
+  </form>
+  <div id="note-rag-answer" class="rag-mini-result"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+<script src="/static/js/editor.js" defer></script>
+{% endblock %}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Error {{ status_code }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css"></head>
+<body>
+<div style="min-height:100vh;display:grid;place-items:center;padding:2rem;text-align:center">
+  <div>
+    <div style="font-size:4rem;font-weight:700;color:var(--c-error);margin-bottom:.5rem">{{ status_code }}</div>
+    <h1 style="margin-bottom:.5rem">Something went wrong</h1>
+    <p style="margin-bottom:2rem">{{ detail }}</p>
+    <a href="/dashboard" class="btn btn-primary">Go to dashboard</a>
+  </div>
+</div>
+</body></html>

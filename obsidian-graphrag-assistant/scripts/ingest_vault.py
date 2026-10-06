@@ -22,6 +22,8 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Ingest Obsidian vault into Neo4j")
     parser.add_argument("--vault", default=None, help="Path to vault directory")
+    parser.add_argument("--user-id", default="system",
+                        help="User ID to ingest for (default: system)")
     parser.add_argument("--reset", action="store_true",
                         help="Delete existing project data before ingesting")
     args = parser.parse_args()
@@ -57,7 +59,7 @@ def main():
 
     # Run ingestion
     start = time.time()
-    stats = run_ingestion(vault_path, reset=args.reset)
+    stats = run_ingestion(vault_path, user_id=args.user_id, reset=args.reset)
     elapsed = time.time() - start
 
     print(f"\n{'='*60}")

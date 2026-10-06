@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Upload Document — KnowledgeBase AI{% endblock %}
+{% block page_title %}Upload Document{% endblock %}
+
+{% block content %}
+{% set active_page = 'documents' %}
+
+<div style="max-width:640px">
+  <div class="breadcrumb">
+    <a href="/documents">Documents</a>
+    <span class="breadcrumb-sep">/</span>
+    <span>Upload</span>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-error mb-4">{{ error }}</div>
+  {% endif %}
+
+  <form action="/documents/upload" method="post" enctype="multipart/form-data" id="upload-form">
+
+    <!-- Dropzone -->
+    <div class="card mb-4">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" name="file" accept=".md,.txt,.pdf,.html,.docx"
+               style="display:none" required>
+        <div class="dropzone-icon">📂</div>
+        <div class="dropzone-title">Drop your file here</div>
+        <div class="dropzone-sub">
+          or click to browse · .md, .txt, .pdf, .html, .docx
+          <br>Max {{ max_size_mb }} MB
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="card">
+      <div class="card-title mb-4">Document details</div>
+
+      <div class="form-group">
+        <label class="form-label" for="title">Title <span style="color:var(--c-text-dim)">(optional)</span></label>
+        <input class="form-input" type="text" id="title" name="title"
+               placeholder="Leave blank to use filename">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="folder_id">Folder</label>
+        <select class="form-select" id="folder_id" name="folder_id">
+          <option value="">— No folder —</option>
+          {% for folder in folders %}
+          <option value="{{ folder.id }}">📁 {{ folder.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="tags">Tags <span style="color:var(--c-text-dim)">(comma-separated)</span></label>
+        <input class="form-input" type="text" id="tags" name="tags"
+               placeholder="e.g. ai, architecture, notes">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-textarea" id="description" name="description"
+                  placeholder="Brief description of this document..." rows="2"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
+          Upload Document
+        </button>
+        <a href="/documents" class="btn btn-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

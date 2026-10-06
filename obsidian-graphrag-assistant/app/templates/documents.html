@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Documents — KnowledgeBase AI{% endblock %}
+{% block page_title %}Documents{% endblock %}
+
+{% block topbar_actions %}
+{% if can_upload %}
+<a href="/documents/upload" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+  Upload
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% set active_page = 'documents' %}
+
+<!-- Usage bar -->
+<div class="card card-sm mb-4">
+  <div class="usage-row">
+    <span class="usage-text">Documents: <strong>{{ doc_count }} / {{ doc_limit }}</strong></span>
+    <div class="usage-bar">
+      <div class="usage-fill {% if doc_count >= doc_limit %}full{% elif doc_count >= doc_limit * 0.8 %}warn{% endif %}"
+           style="width:{{ [((doc_count/doc_limit)*100)|int,100]|min if doc_limit>0 else 0 }}%"></div>
+    </div>
+    {% if not can_upload %}
+    <a href="/access-request" class="btn btn-secondary btn-sm" style="white-space:nowrap">Request more</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error mb-4">{{ error }}</div>
+{% endif %}
+
+<!-- Folder filter -->
+{% if folders %}
+<div class="flex gap-2 mb-4" style="flex-wrap:wrap">
+  <a href="/documents" class="btn btn-sm {% if not request.query_params.get('folder') %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+  {% for folder in folders %}
+  <a href="/folders/{{ folder.id }}" class="btn btn-sm btn-secondary">📁 {{ folder.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if documents %}
+<div class="doc-grid" id="doc-grid">
+  {% for doc in documents %}
+  <div class="doc-card" id="doc-{{ doc.id }}">
+    <div class="flex items-center gap-3">
+      <div class="doc-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div style="min-width:0">
+        <div class="doc-card-title">{{ doc.title }}</div>
+        <div class="doc-card-meta">
+          <span>{{ doc.size_display }}</span>
+          {% if doc.folder %}<span>📁 {{ doc.folder.name }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if doc.tags_list %}
+    <div class="flex gap-1" style="flex-wrap:wrap">
+      {% for tag in doc.tags_list[:3] %}
+      <span class="badge badge-neutral">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="doc-card-footer">
+      <span style="font-size:.75rem;color:var(--c-text-dim)">
+        {{ doc.created_at.strftime('%b %d, %Y') }}
+        {% if doc.is_ingested %}<span class="ingested-dot ml-1" title="Indexed"></span>{% endif %}
+      </span>
+      <div class="flex gap-1">
+        <a href="/documents/{{ doc.id }}" class="btn btn-ghost btn-sm btn-icon" title="View">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </a>
+        <form action="/documents/{{ doc.id }}/delete" method="post" style="display:inline"
+              hx-post="/documents/{{ doc.id }}/delete"
+              hx-target="#doc-{{ doc.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Delete '{{ doc.title }}'?">
+          <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Delete"
+                  style="color:var(--c-error)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📄</div>
+  <div class="empty-title">No documents yet</div>
+  <div class="empty-sub">Upload documents to start building your knowledge base</div>
+  {% if can_upload %}
+  <a href="/documents/upload" class="btn btn-primary mt-4">Upload your first document</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,32 +1,51 @@
-# Core framework
+# ── Web framework ─────────────────────────────────────────────────────────
 fastapi==0.141.1
 uvicorn[standard]==0.32.1
+jinja2==3.1.6
+python-multipart==0.0.20
 
-# Frontend
-streamlit==1.40.2
+# ── Auth ──────────────────────────────────────────────────────────────────
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+itsdangerous==2.2.0
 
-# Neo4j (version constrained by neo4j-graphrag 1.19.0)
+# ── Database ──────────────────────────────────────────────────────────────
+sqlalchemy==2.0.41
+aiosqlite==0.21.0
+
+# ── Neo4j (version constrained by neo4j-graphrag) ─────────────────────────
 neo4j==6.3.0
 neo4j-graphrag==1.19.0
 
-# Google Gemini (official SDK)
-google-genai==1.16.1
+# ── LLM / Embeddings ──────────────────────────────────────────────────────
+groq>=1.7.0
+fastembed>=0.3.0
 
-# Configuration & validation
+# ── Config & validation ────────────────────────────────────────────────────
 pydantic==2.12.5
 pydantic-settings==2.13.1
 python-dotenv==1.1.0
 
-# HTTP client (Streamlit -> FastAPI)
+# ── HTTP ─────────────────────────────────────────────────────────────────
 httpx==0.28.1
 
-# Markdown processing
+# ── Markdown processing ───────────────────────────────────────────────────
 python-frontmatter==1.1.0
 PyYAML==6.0.2
 
-# Testing
+# ── MySQL ─────────────────────────────────────────────────────────────────
+pymysql>=1.1.0
+alembic>=1.13.0
+
+# ── Auth ──────────────────────────────────────────────────────────────────
+passlib[argon2]>=1.7.4
+argon2-cffi>=21.3.0
+python-jose[cryptography]==3.3.0
+
+# ── Testing ───────────────────────────────────────────────────────────────
 pytest==8.3.4
 pytest-asyncio==0.25.3
+anyio[asyncio]>=4.0.0
 
-# Utilities
+# ── Utilities ────────────────────────────────────────────────────────────
 tenacity==9.1.4

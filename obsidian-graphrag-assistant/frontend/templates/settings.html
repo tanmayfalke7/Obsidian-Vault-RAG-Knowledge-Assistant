@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Settings · Vault GraphRAG{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Settings</p>
+    <h1>Vault configuration</h1>
+  </div>
+</section>
+<section class="settings-grid">
+  <article class="panel">
+    <h2>Runtime</h2>
+    <dl class="meta-list">
+      <div><dt>Frontend</dt><dd>FastAPI Jinja2 + HTML/CSS/Vanilla JS + HTMX</dd></div>
+      <div><dt>Authentication</dt><dd>HTTP-only cookie. No browser token storage.</dd></div>
+      <div><dt>Markdown preview</dt><dd>marked.js output sanitized through DOMPurify.</dd></div>
+    </dl>
+  </article>
+  <article class="panel">
+    <h2>Safety Limits</h2>
+    <dl class="meta-list">
+      <div><dt>Upload</dt><dd>Markdown only, UTF-8 validated by backend.</dd></div>
+      <div><dt>Graph</dt><dd>Depth and node counts are backend bounded.</dd></div>
+      <div><dt>RAG</dt><dd>top_k is capped at 20.</dd></div>
+    </dl>
+  </article>
+</section>
+{% endblock %}

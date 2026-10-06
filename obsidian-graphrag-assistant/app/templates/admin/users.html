@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}User Management — Admin{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+{% set active_page = 'admin' %}
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>User</th><th>Email</th><th>Documents</th><th>AI Queries</th><th>Limits</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr id="user-row-{{ u.id }}">
+          <td>
+            <div style="font-weight:500;color:var(--c-text)">{{ u.full_name }}</div>
+            <div class="text-xs text-dim">@{{ u.username }} · joined {{ u.created_at.strftime('%b %Y') }}</div>
+          </td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.documents|length }} / {{ u.max_documents }}</td>
+          <td>{{ u.ai_queries_used }} / {{ u.max_ai_queries }}</td>
+          <td>
+            <form hx-post="/admin/users/{{ u.id }}/limits"
+                  hx-target="#limit-result-{{ u.id }}"
+                  hx-swap="innerHTML"
+                  style="display:flex;gap:.375rem;align-items:center">
+              <input type="number" name="max_documents" value="{{ u.max_documents }}"
+                     class="form-input" style="width:60px;padding:.25rem .375rem;font-size:.8125rem" min="0" max="9999">
+              <input type="number" name="max_ai_queries" value="{{ u.max_ai_queries }}"
+                     class="form-input" style="width:60px;padding:.25rem .375rem;font-size:.8125rem" min="0" max="9999">
+              <button type="submit" class="btn btn-secondary btn-sm" style="padding:.25rem .625rem">Set</button>
+            </form>
+            <div id="limit-result-{{ u.id }}" style="margin-top:.25rem"></div>
+          </td>
+          <td>
+            <span id="status-{{ u.id }}">
+              {% if u.is_admin %}<span class="badge badge-primary">Admin</span>
+              {% elif u.is_active %}<span class="badge badge-success">Active</span>
+              {% else %}<span class="badge badge-error">Inactive</span>{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if not u.is_admin %}
+            <button class="btn btn-ghost btn-sm"
+                    hx-post="/admin/users/{{ u.id }}/toggle"
+                    hx-target="#status-{{ u.id }}"
+                    hx-swap="innerHTML"
+                    hx-confirm="Toggle status for {{ u.full_name }}?">
+              Toggle
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,183 @@
+Test run: 2026-10-06 13:23:08.205511
+
+
+============================================================
+Parser (unit)
+============================================================
+============================= test session starts =============================
+collecting ... collected 14 items
+
+tests/test_parser.py::TestParseNote::test_basic_parse PASSED             [  7%]
+tests/test_parser.py::TestParseNote::test_frontmatter_tags PASSED        [ 14%]
+tests/test_parser.py::TestParseNote::test_no_frontmatter PASSED          [ 21%]
+tests/test_parser.py::TestParseNote::test_headings_extracted PASSED      [ 28%]
+tests/test_parser.py::TestParseNote::test_wiki_links_deduplicated PASSED [ 35%]
+tests/test_parser.py::TestParseNote::test_empty_file PASSED              [ 42%]
+tests/test_parser.py::TestParseVault::test_parse_vault PASSED            [ 50%]
+tests/test_parser.py::TestParseVault::test_empty_vault PASSED            [ 57%]
+tests/test_parser.py::TestChunkNote::test_basic_chunking PASSED          [ 64%]
+tests/test_parser.py::TestChunkNote::test_short_note_single_chunk PASSED [ 71%]
+tests/test_parser.py::TestChunkNote::test_long_note_multiple_chunks PASSED [ 78%]
+tests/test_parser.py::TestExtractConceptName::test_basic PASSED          [ 85%]
+tests/test_parser.py::TestExtractConceptName::test_underscores PASSED    [ 92%]
+tests/test_parser.py::TestExtractConceptName::test_whitespace PASSED     [100%]
+
+============================= 14 passed in 0.11s ==============================
+
+============================================================
+Isolation (Prompt 1+2)
+============================================================
+============================= test session starts =============================
+collecting ... collected 27 items
+
+tests/test_isolation.py::TestMySQLNoteIsolation::test_1_user_a_can_retrieve_own_note PASSED [  3%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_2_user_a_cannot_retrieve_b_note PASSED [  7%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_3_user_b_can_retrieve_own_note PASSED [ 11%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_4_user_b_cannot_retrieve_a_note PASSED [ 14%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_12_user_a_cannot_delete_b_note PASSED [ 18%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_13_user_a_cannot_modify_b_folder PASSED [ 22%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_14_guessing_b_note_id_returns_none PASSED [ 25%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_note_list_a_excludes_b_notes PASSED [ 29%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_note_list_b_excludes_a_notes PASSED [ 33%]
+tests/test_isolation.py::TestMySQLNoteIsolation::test_search_a_excludes_b_content PASSED [ 37%]
+tests/test_isolation.py::TestNeo4jVectorIsolation::test_5_user_a_vector_search_excludes_b_chunks PASSED [ 40%]
+tests/test_isolation.py::TestNeo4jVectorIsolation::test_6_user_b_vector_search_excludes_a_chunks PASSED [ 44%]
+tests/test_isolation.py::TestNeo4jVectorIsolation::test_vector_search_returns_correct_user_chunks PASSED [ 48%]
+tests/test_isolation.py::TestNeo4jGraphIsolation::test_7_user_a_graph_traversal_excludes_b_concepts PASSED [ 51%]
+tests/test_isolation.py::TestNeo4jGraphIsolation::test_8_user_b_graph_traversal_excludes_a_concepts PASSED [ 55%]
+tests/test_isolation.py::TestNeo4jGraphIsolation::test_concept_ids_are_user_scoped PASSED [ 59%]
+tests/test_isolation.py::TestNeo4jGraphIsolation::test_note_ids_are_user_scoped PASSED [ 62%]
+tests/test_isolation.py::TestNeo4jGraphIsolation::test_chunk_ids_are_user_scoped PASSED [ 66%]
+tests/test_isolation.py::TestRAGPipelineIsolation::test_9_user_a_rag_sources_are_only_a PASSED [ 70%]
+tests/test_isolation.py::TestRAGPipelineIsolation::test_10_user_b_rag_sources_are_only_b PASSED [ 74%]
+tests/test_isolation.py::TestRAGPipelineIsolation::test_rag_result_carries_correct_user_id PASSED [ 77%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_15_note_b_id_returns_404_for_user_a PASSED [ 81%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_15_note_a_id_returns_404_for_user_b PASSED [ 85%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_16_rag_query_ignores_user_id_in_body PASSED [ 88%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_11_user_a_cannot_reindex_b_note PASSED [ 92%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_unauthenticated_request_returns_401 PASSED [ 96%]
+tests/test_isolation.py::TestAPISecurityIsolation::test_register_then_login_then_me PASSED [100%]
+
+============================= 27 passed in 6.82s ==============================
+
+============================================================
+GraphRAG (Prompt 3)
+============================================================
+============================= test session starts =============================
+collecting ... collected 32 items
+
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_concept_ids_differ_between_users PASSED [  3%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_a_vector_search_no_b_chunks PASSED [  6%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_b_vector_search_no_a_chunks PASSED [  9%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_a_graph_has_no_postgresql PASSED [ 12%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_b_graph_has_no_neo4j_concept PASSED [ 15%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_a_rag_answer_no_postgresql PASSED [ 18%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_user_b_rag_answer_no_neo4j PASSED [ 21%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_concept_node_ownership_in_neo4j PASSED [ 25%]
+tests/test_graphrag.py::TestMandatorySameConceptIsolation::test_no_cross_concept_relationship PASSED [ 28%]
+tests/test_graphrag.py::TestRetrievalIsolation::test_user_a_top_k_scoped PASSED [ 31%]
+tests/test_graphrag.py::TestRetrievalIsolation::test_user_b_top_k_scoped PASSED [ 34%]
+tests/test_graphrag.py::TestRetrievalIsolation::test_graph_traversal_stays_within_user PASSED [ 37%]
+tests/test_graphrag.py::TestRAGIsolation::test_a_sources_belong_to_a PASSED [ 40%]
+tests/test_graphrag.py::TestRAGIsolation::test_b_sources_belong_to_b PASSED [ 43%]
+tests/test_graphrag.py::TestRAGIsolation::test_context_does_not_contain_b_private_text PASSED [ 46%]
+tests/test_graphrag.py::TestRAGIsolation::test_empty_retrieval_returns_graceful_answer PASSED [ 50%]
+tests/test_graphrag.py::TestRAGIsolation::test_rag_answer_carries_user_id PASSED [ 53%]
+tests/test_graphrag.py::TestRAGIsolation::test_note_scoped_query PASSED  [ 56%]
+tests/test_graphrag.py::TestRAGIsolation::test_retrieved_chunks_field_populated PASSED [ 59%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_unauthenticated_rag_query_rejected PASSED [ 62%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_rag_query_no_user_id_in_body FAILED [ 65%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_note_rag_query_wrong_user_returns_404 FAILED [ 68%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_note_related_wrong_user_returns_404 FAILED [ 71%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_graph_note_wrong_user_returns_404 FAILED [ 75%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_graph_concept_wrong_user_returns_404 FAILED [ 78%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_graph_path_user_scoped FAILED [ 81%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_rag_query_response_schema FAILED [ 84%]
+tests/test_graphrag.py::TestAPIGraphRAG::test_note_rag_query_own_note_succeeds FAILED [ 87%]
+tests/test_graphrag.py::TestGraphExplorer::test_get_concept_neighbours_scoped PASSED [ 90%]
+tests/test_graphrag.py::TestGraphExplorer::test_find_path_rag_to_semantic_search PASSED [ 93%]
+tests/test_graphrag.py::TestGraphExplorer::test_find_path_no_cross_user PASSED [ 96%]
+tests/test_graphrag.py::TestGraphExplorer::test_get_note_graph_user_scoped PASSED [100%]
+
+================================== FAILURES ===================================
+______________ TestAPIGraphRAG.test_rag_query_no_user_id_in_body ______________
+tests\test_graphrag.py:680: in test_rag_query_no_user_id_in_body
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+_________ TestAPIGraphRAG.test_note_rag_query_wrong_user_returns_404 __________
+tests\test_graphrag.py:697: in test_note_rag_query_wrong_user_returns_404
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+__________ TestAPIGraphRAG.test_note_related_wrong_user_returns_404 ___________
+tests\test_graphrag.py:712: in test_note_related_wrong_user_returns_404
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+___________ TestAPIGraphRAG.test_graph_note_wrong_user_returns_404 ____________
+tests\test_graphrag.py:726: in test_graph_note_wrong_user_returns_404
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+__________ TestAPIGraphRAG.test_graph_concept_wrong_user_returns_404 __________
+tests\test_graphrag.py:739: in test_graph_concept_wrong_user_returns_404
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+_________________ TestAPIGraphRAG.test_graph_path_user_scoped _________________
+tests\test_graphrag.py:752: in test_graph_path_user_scoped
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+_______________ TestAPIGraphRAG.test_rag_query_response_schema ________________
+tests\test_graphrag.py:767: in test_rag_query_response_schema
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+____________ TestAPIGraphRAG.test_note_rag_query_own_note_succeeds ____________
+tests\test_graphrag.py:784: in test_note_rag_query_own_note_succeeds
+    token = self._get_token(client, user_a.email)
+tests\test_graphrag.py:661: in _get_token
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+E   AssertionError: Login failed: {"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email.","input":"grtest-api-a-9579055c@graphrag.test","ctx":{"reason":"The part after the @-sign is a special-use or reserved name that cannot be used with email."}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+---------------------------- Captured log teardown ----------------------------
+WARNING  backend.services.graph_service:graph_service.py:382 Deleted user b89c6c5b-6645-47b9-8d6c-7aae1d4eb371 data: 1 notes, 1 chunks, 1 concepts
+WARNING  backend.services.graph_service:graph_service.py:382 Deleted user 2750f4a3-9cb5-4199-aa35-aaadd50eb43f data: 1 notes, 1 chunks, 1 concepts
+=========================== short test summary info ===========================
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_rag_query_no_user_id_in_body
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_note_rag_query_wrong_user_returns_404
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_note_related_wrong_user_returns_404
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_graph_note_wrong_user_returns_404
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_graph_concept_wrong_user_returns_404
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_graph_path_user_scoped
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_rag_query_response_schema
+FAILED tests/test_graphrag.py::TestAPIGraphRAG::test_note_rag_query_own_note_succeeds
+======================== 8 failed, 24 passed in 10.74s ========================
+
+============================================================
+SUMMARY: {'passed': 65, 'failed': 8, 'error': 0}
+============================================================
