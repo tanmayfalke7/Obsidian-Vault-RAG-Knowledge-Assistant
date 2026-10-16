@@ -356,7 +356,8 @@ class HealthResponse(BaseModel):
     status: str
     mysql: str
     neo4j: str
-    groq: str
+    gemini: str = "configured"
+    groq: Optional[str] = None
 
 
 # ── Backward-compat aliases ───────────────────────────────────────────────────

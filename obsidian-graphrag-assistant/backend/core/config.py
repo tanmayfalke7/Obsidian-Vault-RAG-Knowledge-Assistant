@@ -1,5 +1,5 @@
 """
-Central application configuration — Groq LLM + fastembed embeddings + Neo4j + MySQL.
+Central application configuration — Gemini LLM + fastembed embeddings + Neo4j + MySQL.
 Reads from .env. All secrets stay here — never exposed via API or logs.
 """
 import logging
@@ -39,9 +39,21 @@ class Settings(BaseSettings):
     auth_cookie_samesite: Literal["lax", "strict", "none"] = Field(default="lax")
     auth_cookie_domain: str | None = Field(default=None)
 
-    # ── Groq LLM ───────────────────────────────────────────────────────────
-    groq_api_key: str = Field(...)
+    # ── LLM (Gemini) ────────────────────────────────────────────────────────
+    gemini_api_key: str = Field(default="")
+    gemini_llm_model: str = Field(default="gemini-3.8-flash")
+    groq_api_key: str = Field(default="")
     groq_llm_model: str = Field(default="groq/compound-mini")
+
+    @property
+    def llm_api_key(self) -> str:
+        """Active LLM API key (Gemini preferred)."""
+        return self.gemini_api_key or self.groq_api_key
+
+    @property
+    def llm_model(self) -> str:
+        """Active LLM model name."""
+        return self.gemini_llm_model or "gemini-3.8-flash"
 
     # ── Embeddings (fastembed, local, no API key) ──────────────────────────
     embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")

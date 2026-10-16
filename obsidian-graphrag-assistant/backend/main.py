@@ -6,7 +6,7 @@ Startup:
   2. Init MySQL (create tables if missing)
   3. Init Neo4j driver + verify connectivity
   4. Init embedding service (fastembed)
-  5. Init LLM service (Groq)
+  5. Init LLM service (Gemini)
 
 Routes:
   /api/auth/*     — registration, login, logout, me
@@ -64,10 +64,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("⚠️ Embedding service init failed: %s", e)
 
-    # 4. LLM (Groq)
+    # 4. LLM (Gemini)
     try:
-        init_llm_service(settings.groq_api_key, settings.groq_llm_model)
-        logger.info("✓ LLM service (Groq): %s", settings.groq_llm_model)
+        init_llm_service(settings.gemini_api_key or settings.groq_api_key, settings.gemini_llm_model)
+        logger.info("✓ LLM service (Gemini): %s", settings.gemini_llm_model)
     except Exception as e:
         logger.warning("⚠️ LLM service init failed: %s", e)
 
@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="GraphRAG Knowledge Assistant API",
-    description="Multi-tenant GraphRAG backend with MySQL + Neo4j + Groq",
+    description="Multi-tenant GraphRAG backend with MySQL + Neo4j + Gemini",
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -144,5 +144,6 @@ def health():
         status="ok" if neo4j_ok else "degraded",
         mysql="connected",  # tables already created on startup
         neo4j="connected" if neo4j_ok else "disconnected",
-        groq="configured" if settings.groq_api_key else "missing",
+        gemini="configured" if (settings.gemini_api_key or settings.groq_api_key) else "missing",
+        groq="configured" if (settings.gemini_api_key or settings.groq_api_key) else "missing",
     )

@@ -24,8 +24,18 @@ class AppSettings(BaseSettings):
     neo4j_database: str = Field(default="neo4j")
 
     # ── LLM / Embeddings ──────────────────────────────────────────────────
-    groq_api_key: str = Field(...)
+    gemini_api_key: str = Field(default="")
+    gemini_llm_model: str = Field(default="gemini-3.8-flash")
+    groq_api_key: str = Field(default="")
     groq_llm_model: str = Field(default="groq/compound-mini")
+
+    @property
+    def llm_api_key(self) -> str:
+        return self.gemini_api_key or self.groq_api_key
+
+    @property
+    def llm_model(self) -> str:
+        return self.gemini_llm_model or "gemini-3.8-flash"
     embedding_model: str = Field(default="BAAI/bge-small-en-v1.5")
     embedding_dimensions: int = Field(default=384)
     vector_index_name: str = Field(default="chunk_embedding_index")

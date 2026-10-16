@@ -194,5 +194,6 @@ async def health():
         "app": settings.app_name,
         "version": settings.app_version,
         "neo4j": "connected" if neo4j_ok else "disconnected",
-        "groq": "configured" if settings.groq_api_key else "missing",
+        "gemini": "configured" if (settings.gemini_api_key or settings.groq_api_key) else "missing",
+        "groq": "configured" if (settings.gemini_api_key or settings.groq_api_key) else "missing",
     }

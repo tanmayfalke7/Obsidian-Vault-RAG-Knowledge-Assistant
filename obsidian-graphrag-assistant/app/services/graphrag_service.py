@@ -28,7 +28,7 @@ def ensure_services() -> None:
         logger.warning("Neo4j connectivity check failed during service init.")
 
     init_embedding_service(settings.embedding_model)
-    init_llm_service(settings.groq_api_key, settings.groq_llm_model)
+    init_llm_service(settings.gemini_api_key or settings.groq_api_key, settings.gemini_llm_model)
     _services_ready = True
     logger.info("GraphRAG services initialised.")
 

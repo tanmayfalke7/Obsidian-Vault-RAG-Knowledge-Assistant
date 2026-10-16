@@ -1,14 +1,17 @@
 """
-LLM service using Groq API (llama-3.3-70b-versatile).
+LLM service using Google Gemini API (gemini-3.8-flash).
 """
 import logging
+import re
+import time
 from typing import Optional
-from groq import Groq
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
-_client: Optional[Groq] = None
-_llm_model: str = ""
+_client: Optional[genai.Client] = None
+_llm_model: str = "gemini-3.8-flash"
 
 SYSTEM_PROMPT = """You are a knowledgeable assistant for an Obsidian knowledge base focused on \
 Generative AI, RAG, Knowledge Graphs, and backend development.
@@ -25,14 +28,16 @@ RULES:
 """
 
 
-def init_llm_service(api_key: str, model: str) -> None:
+def init_llm_service(api_key: str, model: str = "gemini-3.8-flash") -> None:
     global _client, _llm_model
-    _client = Groq(api_key=api_key)
-    _llm_model = model
-    logger.info("LLM service ready: %s", model)
+    if not api_key:
+        raise ValueError("Gemini API key is required to initialize LLM service.")
+    _client = genai.Client(api_key=api_key)
+    _llm_model = model or "gemini-3.8-flash"
+    logger.info("LLM service ready (Gemini): %s", _llm_model)
 
 
-def _get_client() -> Groq:
+def _get_client() -> genai.Client:
     if _client is None:
         raise RuntimeError("LLM service not initialised.")
     return _client
@@ -46,35 +51,35 @@ def generate_answer(question: str, context: str) -> str:
         "Answer using only the knowledge context above. Cite relevant sources."
     )
     try:
-        import time
+        response = None
         for attempt in range(3):
             try:
-                resp = client.chat.completions.create(
+                response = client.models.generate_content(
                     model=_llm_model,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user_message},
-                    ],
-                    temperature=0.2,
-                    max_tokens=1024,
+                    contents=user_message,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.2,
+                        max_output_tokens=1024,
+                    ),
                 )
                 break
             except Exception as e:
-                if "429" in str(e) and attempt < 2:
+                err_str = str(e)
+                if ("429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "Quota" in err_str) and attempt < 2:
                     wait = 10 * (attempt + 1)
                     logger.info("Rate limit hit, waiting %ds...", wait)
                     time.sleep(wait)
                 else:
                     raise
-        answer = resp.choices[0].message.content or ""
-        # Strip <think>...</think> reasoning tokens (Qwen/reasoning models)
-        import re
+
+        answer = (response.text if response else "") or ""
+        # Strip <think>...</think> reasoning tokens if present
         answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL).strip()
-        # Also strip if the answer starts with just a reasoning trace fragment
         if answer.startswith("<think>"):
             answer = answer.split("</think>", 1)[-1].strip()
         logger.debug("Generated answer: %d chars", len(answer))
         return answer.strip()
     except Exception as e:
-        logger.error("Groq generation failed: %s", e)
+        logger.error("Gemini generation failed: %s", e)
         raise

@@ -317,7 +317,7 @@ Usage statistics: `{user_id, name, notes_count, is_active}`
 
 ### GET /health
 ```json
-{"status": "ok", "mysql": "connected", "neo4j": "connected", "groq": "configured"}
+{"status": "ok", "mysql": "connected", "neo4j": "connected", "gemini": "configured"}
 ```
 
 ---

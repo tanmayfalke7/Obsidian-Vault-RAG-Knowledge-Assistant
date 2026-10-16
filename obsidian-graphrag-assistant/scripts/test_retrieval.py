@@ -33,7 +33,7 @@ def main():
 
     init_driver(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     init_embedding_service(settings.embedding_model)
-    init_llm_service(settings.groq_api_key, settings.groq_llm_model)
+    init_llm_service(settings.gemini_api_key or settings.groq_api_key, settings.gemini_llm_model)
 
     import argparse
     parser = argparse.ArgumentParser()

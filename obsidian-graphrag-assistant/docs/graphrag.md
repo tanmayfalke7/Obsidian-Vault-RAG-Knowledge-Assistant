@@ -33,7 +33,7 @@ Context Fusion
   │  RAG --[USES]--> Embeddings
   │
   ▼
-Groq LLM (compound-mini)
+Gemini LLM (gemini-3.8-flash)
   │  System: cite sources, no hallucination, trace graph relationships
   │
   ▼
@@ -136,7 +136,7 @@ Every hop adds the constraint `user_id = $user_id`.
 
 ## Context Fusion
 
-The context string sent to Groq is structured:
+The context string sent to Gemini is structured:
 
 ```
 RETRIEVED DOCUMENTS
@@ -206,7 +206,7 @@ All graph responses use `{nodes, edges}`:
 | Failure              | Behavior                                                         |
 |----------------------|------------------------------------------------------------------|
 | No matching chunks   | Returns polite "no information" answer, empty sources           |
-| Groq LLM timeout     | Returns graceful error message, `has_error: true` in response   |
+| Gemini LLM timeout   | Returns graceful error message, `has_error: true` in response   |
 | Neo4j unavailable    | 503 Service Unavailable (graph endpoints)                       |
 | Neo4j missing index  | Logged as error; vector search returns empty result             |
 | Invalid concept ID   | 404 Not Found                                                    |

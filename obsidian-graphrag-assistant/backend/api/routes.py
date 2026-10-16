@@ -25,13 +25,13 @@ router = APIRouter()
 
 @router.get("/health", response_model=HealthResponse, tags=["system"])
 def health_check():
-    """Check Neo4j connectivity and Groq configuration."""
+    """Check Neo4j connectivity and Gemini configuration."""
     neo4j_ok = verify_connectivity()
-    groq_ok = bool(settings.groq_api_key)
+    gemini_ok = bool(settings.gemini_api_key or settings.groq_api_key)
     return HealthResponse(
-        status="ok" if (neo4j_ok and groq_ok) else "degraded",
+        status="ok" if (neo4j_ok and gemini_ok) else "degraded",
         neo4j="connected" if neo4j_ok else "disconnected",
-        gemini="configured" if groq_ok else "not_configured",
+        gemini="configured" if gemini_ok else "not_configured",
     )
 
 

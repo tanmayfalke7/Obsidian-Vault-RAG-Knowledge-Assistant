@@ -1,7 +1,7 @@
 """
 Integration tests for the RAG pipeline.
 Requires Neo4j connected + vault already ingested for a user.
-Uses Groq LLM and fastembed — no Gemini dependency.
+Uses Gemini LLM and fastembed.
 """
 import pytest
 import sys
@@ -15,7 +15,7 @@ SYSTEM_USER_ID = "system"  # the user_id used by the sample vault script
 def services_available() -> bool:
     try:
         from backend.core.config import settings
-        return bool(settings.neo4j_password and settings.groq_api_key)
+        return bool(settings.neo4j_password and (settings.gemini_api_key or settings.groq_api_key))
     except Exception:
         return False
 
@@ -23,14 +23,14 @@ def services_available() -> bool:
 @pytest.fixture(scope="module", autouse=True)
 def init_services():
     if not services_available():
-        pytest.skip("Services not configured (Neo4j or Groq missing)")
+        pytest.skip("Services not configured (Neo4j or Gemini missing)")
     from backend.core.config import settings
     from backend.db.neo4j_client import init_driver
     from backend.services.embedding_service import init_embedding_service
     from backend.services.llm_service import init_llm_service
     init_driver(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     init_embedding_service(settings.embedding_model)
-    init_llm_service(settings.groq_api_key, settings.groq_llm_model)
+    init_llm_service(settings.gemini_api_key or settings.groq_api_key, settings.gemini_llm_model)
     yield
     from backend.db.neo4j_client import close_driver
     close_driver()

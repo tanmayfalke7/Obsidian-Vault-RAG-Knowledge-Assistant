@@ -62,7 +62,7 @@ def rag_query(
       3. User-scoped vector search
       4. User-scoped graph traversal
       5. Context fusion (user data only)
-      6. Groq LLM generation
+      6. Gemini LLM generation
       7. Return structured answer + sources + graph context
     """
     _ensure_services()
@@ -241,4 +241,4 @@ def _ensure_services():
     try:
         _get_client()
     except RuntimeError:
-        init_llm_service(settings.groq_api_key, settings.groq_llm_model)
+        init_llm_service(settings.gemini_api_key or settings.groq_api_key, settings.gemini_llm_model)

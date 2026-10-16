@@ -157,7 +157,7 @@ def ask(
     context = _build_context(retrieval)
     logger.debug("Context built: %d chars for user=%s", len(context), user_id)
 
-    # Step 3: Generate answer with Groq LLM
+    # Step 3: Generate answer with Gemini LLM
     error_msg: str | None = None
     try:
         answer_text = generate_answer(question, context)

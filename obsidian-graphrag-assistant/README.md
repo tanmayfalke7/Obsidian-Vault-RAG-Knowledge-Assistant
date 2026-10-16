@@ -19,7 +19,7 @@ MySQL (users, folders, notes)  +  Neo4j (user-scoped graph + vector index)
      ↓
 GraphRAG Retrieval (user-scoped vector search → graph traversal)
      ↓
-Groq LLM (grounded answer from user's own context only)
+Gemini LLM (grounded answer from user's own context only)
      ↓
 Answer + Sources (user-owned notes only)
 ```
@@ -38,7 +38,7 @@ Answer + Sources (user-owned notes only)
 | Knowledge Graph | Neo4j 2026.x |
 | Vector Index | Neo4j native vector index (cosine, 384 dims) |
 | Embeddings | fastembed (BAAI/bge-small-en-v1.5, local, no API key) |
-| LLM | Groq API (compound-mini) |
+| LLM | Google Gemini API (gemini-3.8-flash) |
 | Auth | JWT (HTTP-only cookie, argon2 password hashing) |
 
 ---
@@ -91,9 +91,9 @@ NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_neo4j_password
 NEO4J_DATABASE=neo4j
 
-# Groq LLM
-GROQ_API_KEY=your_groq_api_key
-GROQ_LLM_MODEL=groq/compound-mini
+# Gemini LLM
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_LLM_MODEL=gemini-3.8-flash
 
 # Embeddings (local, no API key)
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
